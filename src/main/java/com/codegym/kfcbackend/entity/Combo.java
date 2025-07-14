@@ -17,6 +17,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Entity
@@ -25,27 +28,33 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Product {
+public class Combo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
+    private String description;
+    private String imageUrl;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discountAmount;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
+    private BigDecimal totalPrice;
 
-    private String description;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal totalPriceAfterDiscount;
 
-    private String imageUrl;
+    private LocalDate discountStartDate;
+    private LocalDate discountEndDate;
+    private LocalTime discountStartTime;
+    private LocalTime discountEndTime;
+
+    @OneToMany(mappedBy = "combo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ComboItem> comboItems;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id")
     private Category category;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ComboItem> comboItems;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RecipeItem> recipeItems;
 }

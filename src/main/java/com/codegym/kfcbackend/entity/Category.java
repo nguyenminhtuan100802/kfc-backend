@@ -35,4 +35,12 @@ public class Category {
             fetch = FetchType.LAZY
     )
     private List<Product> products;
+
+    @OneToMany(
+            mappedBy = "category",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private List<Combo> combos;
 }

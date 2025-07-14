@@ -7,6 +7,8 @@ import com.codegym.kfcbackend.repository.CategoryRepository;
 import com.codegym.kfcbackend.service.ICategoryService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CategoryService implements ICategoryService {
     private CategoryRepository categoryRepository;
@@ -28,5 +30,11 @@ public class CategoryService implements ICategoryService {
                 .build();
         Category savedCategory = categoryRepository.save(category);
         return savedCategory;
+    }
+
+    @Override
+    public List<Category> getAllCategories() {
+        List<Category> categories = categoryRepository.findAll();
+        return categories;
     }
 }

@@ -7,18 +7,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ProductRequest {
-    private String name;
-    private BigDecimal price;
-    private String description;
-    private String imageUrl;
-    private String categoryName;
-    private List<RecipeItemRequest> recipeItems;
+public class RecipeItemRequest {
+    private BigDecimal quantity;
+    private String ingredientName;
+    private String baseUnitCode;
 }

@@ -50,12 +50,26 @@ public class WebSecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(requests -> {
                     requests
-                            .requestMatchers(POST, "users/login").permitAll()
-                            .requestMatchers(POST, "users/change-default-password").permitAll()
-                            .requestMatchers(POST, "users/create-employee").permitAll()
-                            .requestMatchers(POST, "products").permitAll()
-                            .requestMatchers(GET, "roles").permitAll()
-                            .requestMatchers(POST, "roles").hasRole("ADMIN")
+                            .requestMatchers(POST, "/users/login").permitAll()
+                            .requestMatchers(POST, "/users/change-default-password").permitAll()
+                            .requestMatchers(POST, "/users/create-employee").permitAll()
+
+                            .requestMatchers(POST, "/products").permitAll()
+                            .requestMatchers(PUT, "/products/*").permitAll()
+                            .requestMatchers(DELETE, "/products/*").permitAll()
+                            .requestMatchers(POST, "/products/create-combo").permitAll()
+                            .requestMatchers(GET, "/products/**").permitAll()
+
+                            .requestMatchers("/unit-of-measures/**").permitAll()
+
+                            .requestMatchers("/ingredients/**").permitAll()
+                            .requestMatchers("/stock-entries/**").permitAll()
+
+                            .requestMatchers(GET, "/categories").permitAll()
+
+                            .requestMatchers(GET, "/roles").permitAll()
+                            .requestMatchers(POST, "/roles").hasRole("ADMIN")
+
                             .anyRequest().authenticated();
                 });
         return http.build();
