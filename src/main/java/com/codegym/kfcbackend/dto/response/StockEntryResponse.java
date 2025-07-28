@@ -22,6 +22,6 @@ public class StockEntryResponse {
     private BigDecimal pricePerUnit;
     private BigDecimal totalPrice;
     private LocalDateTime importedAt;
-    private String ingredientName;
     private boolean finalized;
+    private String ingredientName;
 }

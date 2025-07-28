@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -32,7 +33,6 @@ public class StockEntryController {
         try {
             StockEntry created = stockEntryService.createStockEntry(request);
             return ResponseEntity.ok(ApiResponse.builder()
-                    .data(created)
                     .message("Created stock entry successfully")
                     .build());
         } catch (Exception ex) {
@@ -49,7 +49,6 @@ public class StockEntryController {
         try {
             StockEntry created = stockEntryService.approveStockEntry(id, request);
             return ResponseEntity.ok(ApiResponse.builder()
-                    .data(created)
                     .message("Approved stock entry successfully")
                     .build());
 
@@ -66,7 +65,7 @@ public class StockEntryController {
     @GetMapping
     public ResponseEntity<?> getAllStockEntries() {
         List<StockEntry> stockEntries = stockEntryService.getAllStockEntries();
-        List<StockEntryResponse> responses = new java.util.ArrayList<>();
+        List<StockEntryResponse> responses = new ArrayList<>();
         for (StockEntry stockEntry : stockEntries) {
             responses.add(StockEntryResponse.builder()
                     .id(stockEntry.getId())
@@ -75,8 +74,8 @@ public class StockEntryController {
                     .pricePerUnit(stockEntry.getPricePerUnit())
                     .totalPrice(stockEntry.getQuantity().multiply(stockEntry.getPricePerUnit()))
                     .importedAt(stockEntry.getImportedAt())
-                    .ingredientName(stockEntry.getIngredient().getName())
                     .finalized(stockEntry.isFinalized())
+                    .ingredientName(stockEntry.getIngredient().getName())
                     .build());
         }
         return ResponseEntity.ok(ApiResponse.builder()
@@ -105,7 +104,6 @@ public class StockEntryController {
         try {
             StockEntry updated = stockEntryService.updateStockEntry(id, request);
             return ResponseEntity.ok(ApiResponse.builder()
-                    .data(updated)
                     .message("Updated stock entry successfully")
                     .build());
         } catch (Exception ex) {

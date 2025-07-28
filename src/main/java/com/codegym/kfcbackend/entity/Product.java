@@ -40,8 +40,8 @@ public class Product {
     private String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @JoinColumn(name = "product_category_id")
+    private ProductCategory productCategory;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ComboItem> comboItems;

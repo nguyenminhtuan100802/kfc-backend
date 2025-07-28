@@ -18,7 +18,6 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -55,6 +54,6 @@ public class Combo {
     private List<ComboItem> comboItems;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @JoinColumn(name = "combo_category_id")
+    private ComboCategory comboCategory;
 }

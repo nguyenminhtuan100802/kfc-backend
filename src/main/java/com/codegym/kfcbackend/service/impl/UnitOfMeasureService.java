@@ -5,9 +5,13 @@ import com.codegym.kfcbackend.dto.request.UnitOfMeasureRequest;
 import com.codegym.kfcbackend.entity.UnitOfMeasure;
 import com.codegym.kfcbackend.repository.UnitOfMeasureRepository;
 import com.codegym.kfcbackend.service.IUnitOfMeasureService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -43,7 +47,14 @@ public class UnitOfMeasureService implements IUnitOfMeasureService {
     }
 
     @Override
-    public List<UnitOfMeasure> getAllUnitOfMeasures() {
+    public Page<UnitOfMeasure> getUnitsByKeyword(String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UnitOfMeasure> unitOfMeasures = unitOfMeasureRepository.findAllByKeyword(keyword, pageable);
+        return unitOfMeasures;
+    }
+
+    @Override
+    public List<UnitOfMeasure> getAllUnits() {
         List<UnitOfMeasure> unitOfMeasures = unitOfMeasureRepository.findAllGroupByBaseUnitThenFactorDesc();
         return unitOfMeasures;
     }

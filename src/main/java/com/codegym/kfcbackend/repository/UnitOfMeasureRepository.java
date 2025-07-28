@@ -1,6 +1,8 @@
 package com.codegym.kfcbackend.repository;
 
 import com.codegym.kfcbackend.entity.UnitOfMeasure;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -32,4 +34,12 @@ public interface UnitOfMeasureRepository extends JpaRepository<UnitOfMeasure, Lo
               ORDER BY u.baseUnitCode ASC, u.factorToBase DESC
             """)
     List<UnitOfMeasure> findAllGroupByBaseUnitThenFactorDesc();
+
+
+    @Query("SELECT u FROM UnitOfMeasure u " +
+            " WHERE (:kw IS NULL " +
+            "    OR LOWER(u.code) LIKE LOWER(CONCAT('%', :kw, '%')) " +
+            "    OR LOWER(u.baseUnitCode) LIKE LOWER(CONCAT('%', :kw, '%'))) " +
+            " ORDER BY u.baseUnitCode ASC, u.factorToBase DESC")
+    Page<UnitOfMeasure> findAllByKeyword(@Param("kw") String keyword, Pageable pageable);
 }

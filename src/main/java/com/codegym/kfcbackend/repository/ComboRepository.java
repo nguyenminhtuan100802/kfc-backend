@@ -1,6 +1,5 @@
 package com.codegym.kfcbackend.repository;
 
-import com.codegym.kfcbackend.entity.Category;
 import com.codegym.kfcbackend.entity.Combo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -30,7 +30,7 @@ import static org.springframework.http.HttpMethod.PUT;
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
-    private CustomUserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
     private final JwtTokenFilter jwtTokenFilter;
 
     public WebSecurityConfig(CustomUserDetailsService userDetailsService,
@@ -42,8 +42,7 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> {
-                })
+                .cors(cors -> {})
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -60,12 +59,20 @@ public class WebSecurityConfig {
                             .requestMatchers(POST, "/products/create-combo").permitAll()
                             .requestMatchers(GET, "/products/**").permitAll()
 
+                            .requestMatchers("/combos/**").permitAll()
+
+                            .requestMatchers("/bills/**").permitAll()
+                            .requestMatchers("/bills/summary-report").permitAll()
+
+                            .requestMatchers("/ingredient-categories/**").permitAll()
+                            .requestMatchers("/combo-categories/**").permitAll()
+                            .requestMatchers("/product-categories/**").permitAll()
+
                             .requestMatchers("/unit-of-measures/**").permitAll()
 
                             .requestMatchers("/ingredients/**").permitAll()
                             .requestMatchers("/stock-entries/**").permitAll()
 
-                            .requestMatchers(GET, "/categories").permitAll()
 
                             .requestMatchers(GET, "/roles").permitAll()
                             .requestMatchers(POST, "/roles").hasRole("ADMIN")
@@ -73,19 +80,6 @@ public class WebSecurityConfig {
                             .anyRequest().authenticated();
                 });
         return http.build();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
     }
 
     @Bean

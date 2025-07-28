@@ -13,6 +13,6 @@ import lombok.Setter;
 @Builder
 public class IngredientRequest {
     private String name;
-    private String imageUrl;
     private String baseUnitCode;
+    private String ingredientCategoryName;
 }
