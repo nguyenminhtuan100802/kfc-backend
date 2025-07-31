@@ -83,20 +83,6 @@ public class StockEntryController {
                 .build());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getStockEntryById(@PathVariable Long id) {
-        try {
-            StockEntry entry = stockEntryService.getStockEntryById(id);
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .data(entry)
-                    .build());
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.builder()
-                    .message(ex.getMessage())
-                    .build());
-        }
-    }
-
     @PutMapping("/{id}")
     public ResponseEntity<?> updateStockEntry(
             @PathVariable Long id,

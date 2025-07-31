@@ -32,17 +32,22 @@ import static org.springframework.http.HttpMethod.PUT;
 public class WebSecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final JwtTokenFilter jwtTokenFilter;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
+
 
     public WebSecurityConfig(CustomUserDetailsService userDetailsService,
-                             JwtTokenFilter jwtTokenFilter) {
+                             JwtTokenFilter jwtTokenFilter,
+                             CustomAccessDeniedHandler accessDeniedHandler) {
         this.userDetailsService = userDetailsService;
         this.jwtTokenFilter = jwtTokenFilter;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> {})
+                .cors(cors -> {
+                })
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -53,32 +58,58 @@ public class WebSecurityConfig {
                             .requestMatchers(POST, "/users/change-default-password").permitAll()
                             .requestMatchers(POST, "/users/create-employee").permitAll()
 
-                            .requestMatchers(POST, "/products").permitAll()
-                            .requestMatchers(PUT, "/products/*").permitAll()
-                            .requestMatchers(DELETE, "/products/*").permitAll()
-                            .requestMatchers(POST, "/products/create-combo").permitAll()
                             .requestMatchers(GET, "/products/**").permitAll()
+                            .requestMatchers(POST, "/products").hasAnyRole("ADMIN")
+                            .requestMatchers(PUT, "/products/*").hasAnyRole("ADMIN")
+                            .requestMatchers(DELETE, "/products/*").hasAnyRole("ADMIN")
 
-                            .requestMatchers("/combos/**").permitAll()
+                            .requestMatchers(GET, "/combos/**").permitAll()
+                            .requestMatchers(POST, "/combos").hasAnyRole("ADMIN")
+                            .requestMatchers(PUT, "/combos/*").hasAnyRole("ADMIN")
+                            .requestMatchers(DELETE, "/combos/*").hasAnyRole("ADMIN")
 
-                            .requestMatchers("/bills/**").permitAll()
-                            .requestMatchers("/bills/summary-report").permitAll()
+                            .requestMatchers(POST, "/bills").permitAll()
+                            .requestMatchers(GET, "/bills/**").hasAnyRole("ADMIN")
+                            .requestMatchers(POST, "/bills/summary-report").hasAnyRole("ADMIN")
 
-                            .requestMatchers("/ingredient-categories/**").permitAll()
-                            .requestMatchers("/combo-categories/**").permitAll()
-                            .requestMatchers("/product-categories/**").permitAll()
+                            .requestMatchers(GET, "/ingredient-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(POST, "/ingredient-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(PUT, "/ingredient-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(DELETE, "/ingredient-categories/**").hasAnyRole("ADMIN")
 
-                            .requestMatchers("/unit-of-measures/**").permitAll()
+                            .requestMatchers(GET, "/combo-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(POST, "/combo-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(PUT, "/combo-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(DELETE, "/combo-categories/**").hasAnyRole("ADMIN")
 
-                            .requestMatchers("/ingredients/**").permitAll()
-                            .requestMatchers("/stock-entries/**").permitAll()
+                            .requestMatchers(GET, "/product-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(POST, "/product-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(PUT, "/product-categories/**").hasAnyRole("ADMIN")
+                            .requestMatchers(DELETE, "/product-categories/**").hasAnyRole("ADMIN")
 
+                            .requestMatchers(GET, "/unit-of-measures/**").hasAnyRole("ADMIN")
+                            .requestMatchers(POST, "/unit-of-measures/**").hasAnyRole("ADMIN")
+                            .requestMatchers(PUT, "/unit-of-measures/**").hasAnyRole("ADMIN")
+                            .requestMatchers(DELETE, "/unit-of-measures/**").hasAnyRole("ADMIN")
 
-                            .requestMatchers(GET, "/roles").permitAll()
-                            .requestMatchers(POST, "/roles").hasRole("ADMIN")
+                            .requestMatchers(GET, "/ingredients/**").hasAnyRole("ADMIN")
+                            .requestMatchers(POST, "/ingredients/**").hasAnyRole("ADMIN")
+                            .requestMatchers(PUT, "/ingredients/**").hasAnyRole("ADMIN")
+                            .requestMatchers(DELETE, "/ingredients/**").hasAnyRole("ADMIN")
+
+                            .requestMatchers(GET, "/stock-entries/**").hasAnyRole("ADMIN")
+                            .requestMatchers(POST, "/stock-entries/**").hasAnyRole("ADMIN")
+                            .requestMatchers(PUT, "/stock-entries/**").hasAnyRole("ADMIN")
+                            .requestMatchers(DELETE, "/stock-entries/**").hasAnyRole("ADMIN")
+
+                            .requestMatchers(GET, "/roles").hasAnyRole("ADMIN")
+                            .requestMatchers(POST, "/roles").hasAnyRole("ADMIN")
 
                             .anyRequest().authenticated();
-                });
+                })
+                .exceptionHandling(ex -> ex
+                        .accessDeniedHandler(accessDeniedHandler) // xử lý 403
+                );
         return http.build();
     }
 

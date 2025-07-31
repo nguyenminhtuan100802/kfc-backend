@@ -20,4 +20,7 @@ public class SummaryReportResponse {
     private BigDecimal totalProfit;
     private Long totalBills;
     private List<BillResponse> bills;
+    private List<StaffSaleSummaryResponse> staffSalesSummaries;
+    private List<IngredientUsedSummaryResponse> ingredientUsedSummaries;
+    private List<ProductSaleSummaryResponse> productSalesSummaries;
 }

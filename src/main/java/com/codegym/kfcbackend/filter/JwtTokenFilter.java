@@ -28,38 +28,50 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        return path.equals("/users/login") ||
+                path.equals("/api/auth/register") ||
+                path.startsWith("/public/");
+    }
+
+    @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String jwt = authHeader.substring(7);
-        String username = jwtTokenService.extractUsername(jwt);
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User existingUser = (User) userDetailsService.loadUserByUsername(username);
-            if (jwtTokenService.validateToken(jwt, existingUser)) {
-                UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(
-                                existingUser,
-                                null,
-                                existingUser.getAuthorities()
-                        );
-
-                authenticationToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        try {
+            final String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing or invalid Authorization header");
+                return;
             }
-        }
 
-        filterChain.doFilter(request, response);
+            String jwt = authHeader.substring(7);
+            String username = jwtTokenService.extractUsername(jwt);
+
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                User existingUser = (User) userDetailsService.loadUserByUsername(username);
+                if (jwtTokenService.validateToken(jwt, existingUser)) {
+                    UsernamePasswordAuthenticationToken authenticationToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    existingUser,
+                                    null,
+                                    existingUser.getAuthorities()
+                            );
+
+                    authenticationToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                }
+            }
+
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+        }
     }
 }

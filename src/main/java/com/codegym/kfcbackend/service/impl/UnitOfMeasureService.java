@@ -8,6 +8,7 @@ import com.codegym.kfcbackend.service.IUnitOfMeasureService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,7 +17,7 @@ import java.util.List;
 
 @Service
 public class UnitOfMeasureService implements IUnitOfMeasureService {
-    private UnitOfMeasureRepository unitOfMeasureRepository;
+    private final UnitOfMeasureRepository unitOfMeasureRepository;
 
     public UnitOfMeasureService(UnitOfMeasureRepository unitOfMeasureRepository) {
         this.unitOfMeasureRepository = unitOfMeasureRepository;
@@ -41,6 +42,7 @@ public class UnitOfMeasureService implements IUnitOfMeasureService {
                 .code(request.getCode().toLowerCase())
                 .baseUnitCode(request.getBaseUnitCode().toLowerCase())
                 .factorToBase(request.getFactorToBase())
+                .createdBy(SecurityContextHolder.getContext().getAuthentication().getName())
                 .build();
         UnitOfMeasure savedUnitOfMeasure = unitOfMeasureRepository.save(unitOfMeasure);
         return savedUnitOfMeasure;
@@ -81,6 +83,7 @@ public class UnitOfMeasureService implements IUnitOfMeasureService {
         updateUnitOfMeasure.setCode(request.getCode().toLowerCase());
         updateUnitOfMeasure.setBaseUnitCode(request.getBaseUnitCode().toLowerCase());
         updateUnitOfMeasure.setFactorToBase(request.getFactorToBase());
+        updateUnitOfMeasure.setModifiedBy(SecurityContextHolder.getContext().getAuthentication().getName());
 
         UnitOfMeasure savedUnitOfMeasure = unitOfMeasureRepository.save(updateUnitOfMeasure);
         return savedUnitOfMeasure;

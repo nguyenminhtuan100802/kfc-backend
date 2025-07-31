@@ -4,6 +4,9 @@ import com.codegym.kfcbackend.constant.AppConstants;
 import com.codegym.kfcbackend.dto.request.BillItemRequest;
 import com.codegym.kfcbackend.dto.request.BillRequest;
 import com.codegym.kfcbackend.dto.request.SummaryReportRequest;
+import com.codegym.kfcbackend.dto.response.IngredientUsedSummaryResponse;
+import com.codegym.kfcbackend.dto.response.ProductSaleSummaryResponse;
+import com.codegym.kfcbackend.dto.response.StaffSaleSummaryResponse;
 import com.codegym.kfcbackend.dto.response.SummaryReportResponse;
 import com.codegym.kfcbackend.dto.response.BillResponse;
 import com.codegym.kfcbackend.entity.Bill;
@@ -12,12 +15,14 @@ import com.codegym.kfcbackend.entity.BillItemDetail;
 import com.codegym.kfcbackend.entity.Combo;
 import com.codegym.kfcbackend.entity.ComboItem;
 import com.codegym.kfcbackend.entity.Ingredient;
+import com.codegym.kfcbackend.entity.IngredientCategory;
 import com.codegym.kfcbackend.entity.Product;
 import com.codegym.kfcbackend.entity.RecipeItem;
 import com.codegym.kfcbackend.entity.User;
 import com.codegym.kfcbackend.enums.BillStatus;
 import com.codegym.kfcbackend.repository.BillRepository;
 import com.codegym.kfcbackend.repository.ComboRepository;
+import com.codegym.kfcbackend.repository.IngredientCategoryRepository;
 import com.codegym.kfcbackend.repository.IngredientRepository;
 import com.codegym.kfcbackend.repository.ProductRepository;
 import com.codegym.kfcbackend.repository.UserRepository;
@@ -38,17 +43,20 @@ public class BillService implements IBillService {
     private final ProductRepository productRepository;
     private final ComboRepository comboRepository;
     private final IngredientRepository ingredientRepository;
+    private final IngredientCategoryRepository ingredientCategoryRepository;
     private final BillRepository billRepository;
 
     public BillService(UserRepository userRepository,
                        ProductRepository productRepository,
                        ComboRepository comboRepository,
                        IngredientRepository ingredientRepository,
+                       IngredientCategoryRepository ingredientCategoryRepository,
                        BillRepository billRepository) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.comboRepository = comboRepository;
         this.ingredientRepository = ingredientRepository;
+        this.ingredientCategoryRepository = ingredientCategoryRepository;
         this.billRepository = billRepository;
     }
 
@@ -197,11 +205,90 @@ public class BillService implements IBillService {
                 .totalProfit(BigDecimal.ZERO)
                 .totalBills(0L)
                 .bills(new ArrayList<>())
+                .staffSalesSummaries(new ArrayList<>())
+                .productSalesSummaries(new ArrayList<>())
+                .ingredientUsedSummaries(new ArrayList<>())
                 .build();
+
         for (Bill bill : bills) {
             if ((bill.getBillDate().toLocalDate().isEqual(request.getFromDate()) || bill.getBillDate().toLocalDate().isAfter(request.getFromDate())) &&
                     (bill.getBillDate().toLocalDate().isEqual(request.getToDate()) || bill.getBillDate().toLocalDate().isBefore(request.getToDate())) &&
                     bill.getStatus() == BillStatus.PAID) {
+//                staff sale
+                boolean isNewStaff = true;
+                for (StaffSaleSummaryResponse staff : summaryReportResponse.getStaffSalesSummaries()) {
+                    if (staff.getUsername().equals(bill.getStaff().getUsername())) {
+                        staff.setTotalProductsSold(staff.getTotalProductsSold() + 1);
+                        isNewStaff = false;
+                        break;
+                    }
+                }
+                if (isNewStaff) {
+                    summaryReportResponse.getStaffSalesSummaries().add(
+                            StaffSaleSummaryResponse.builder()
+                                    .staffName(bill.getStaff().getFullName())
+                                    .username(bill.getStaff().getUsername())
+                                    .roleName(bill.getStaff().getRole().getName())
+                                    .totalProductsSold(1L)
+                                    .build()
+                    );
+                }
+//                product sale
+                for (BillItem billItem : bill.getBillItems()) {
+                    boolean isNewProductOrCombo = true;
+                    String productNameOrComboName = null;
+
+                    if (billItem.getProduct() != null) {
+                        productNameOrComboName = billItem.getProduct().getName();
+                    } else if (billItem.getCombo() != null) {
+                        productNameOrComboName = billItem.getCombo().getName();
+                    }
+
+                    for (ProductSaleSummaryResponse product : summaryReportResponse.getProductSalesSummaries()) {
+                        if (product.getProductNameOrComboName().equals(productNameOrComboName)) {
+                            product.setTotalSold(product.getTotalSold() + billItem.getQuantity());
+                            isNewProductOrCombo = false;
+                            break;
+                        }
+                    }
+                    if (isNewProductOrCombo) {
+                        summaryReportResponse.getProductSalesSummaries().add(
+                                ProductSaleSummaryResponse.builder()
+                                        .productNameOrComboName(productNameOrComboName)
+                                        .totalSold(Long.valueOf(billItem.getQuantity()))
+                                        .build()
+                        );
+                    }
+                }
+
+//                used ingredient
+                for (BillItem billItem : bill.getBillItems()) {
+                    for (BillItemDetail billItemDetail : billItem.getBillItemDetails()) {
+                        boolean isNewIngredient = true;
+                        for (IngredientUsedSummaryResponse ingredient : summaryReportResponse.getIngredientUsedSummaries()) {
+                            if (billItemDetail.getIngredientName().equals(ingredient.getIngredientName())) {
+                                ingredient.setQuantityUsed(ingredient.getQuantityUsed().add(billItemDetail.getUsedQuantity()));
+                                isNewIngredient = false;
+                                break;
+                            }
+                        }
+                        if (isNewIngredient) {
+                            Ingredient existingIngredient = ingredientRepository.findByName(billItemDetail.getIngredientName())
+                                    .orElseThrow(() -> new RuntimeException("Ingredient not found: " + billItemDetail.getIngredientName()));
+
+                            summaryReportResponse.getIngredientUsedSummaries().add(
+                                    IngredientUsedSummaryResponse.builder()
+                                            .ingredientName(billItemDetail.getIngredientName())
+                                            .ingredientCategoryName(existingIngredient.getIngredientCategory().getName())
+                                            .quantityUsed(billItemDetail.getUsedQuantity())
+                                            .quantityRemaining(existingIngredient.getCurrentQuantity())
+                                            .baseUnitCode(billItemDetail.getBaseUnitCode())
+                                            .build()
+                            );
+                        }
+                    }
+                }
+//                bill between
                 BillResponse billResponse = BillResponse.builder()
                         .billDate(bill.getBillDate())
                         .staffName(bill.getStaff().getUsername())
@@ -209,6 +296,7 @@ public class BillService implements IBillService {
                         .totalCost(bill.getTotalCost())
                         .status(bill.getStatus())
                         .build();
+
                 summaryReportResponse.getBills().add(billResponse);
                 summaryReportResponse.setTotalRevenue(summaryReportResponse.getTotalRevenue().add(bill.getTotalRevenue()));
                 summaryReportResponse.setTotalCost(summaryReportResponse.getTotalCost().add(bill.getTotalCost()));

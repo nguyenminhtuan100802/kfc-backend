@@ -2,6 +2,7 @@ package com.codegym.kfcbackend.controller;
 
 import com.codegym.kfcbackend.dto.request.UnitOfMeasureRequest;
 import com.codegym.kfcbackend.dto.response.ApiResponse;
+import com.codegym.kfcbackend.dto.response.UnitOfMeasureResponse;
 import com.codegym.kfcbackend.entity.UnitOfMeasure;
 import com.codegym.kfcbackend.service.IUnitOfMeasureService;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +54,27 @@ public class UnitOfMeasureController {
             @RequestParam(value = "size", defaultValue = "3") int size
     ) {
         Page<UnitOfMeasure> result = unitOfMeasureService.getUnitsByKeyword(keyword, page, size);
-        ApiResponse response = ApiResponse.builder()
-                .data(result.getContent())
+
+        List<UnitOfMeasure> unitOfMeasures = result.getContent();
+        List<UnitOfMeasureResponse> unitOfMeasureResponses = new ArrayList<>();
+        for (UnitOfMeasure unitOfMeasure : unitOfMeasures) {
+            UnitOfMeasureResponse unitOfMeasureResponse = UnitOfMeasureResponse.builder()
+                    .id(unitOfMeasure.getId())
+                    .code(unitOfMeasure.getCode())
+                    .baseUnitCode(unitOfMeasure.getBaseUnitCode())
+                    .factorToBase(unitOfMeasure.getFactorToBase())
+                    .createdAt(unitOfMeasure.getCreatedAt())
+                    .createdBy(unitOfMeasure.getCreatedBy())
+                    .modifiedAt(unitOfMeasure.getModifiedAt())
+                    .modifiedBy(unitOfMeasure.getModifiedBy())
+                    .build();
+            unitOfMeasureResponses.add(unitOfMeasureResponse);
+        }
+        return ResponseEntity.ok(ApiResponse.builder()
+                .data(unitOfMeasureResponses)
                 .totalElements(result.getTotalElements())
                 .totalPages((long) result.getTotalPages())
-                .build();
-        return ResponseEntity.ok(response);
+                .build());
     }
 
     @GetMapping("/all")

@@ -11,5 +11,8 @@ import java.util.Optional;
 public interface IngredientCategoryRepository extends JpaRepository<IngredientCategory, Long> {
     @Query("SELECT c FROM IngredientCategory c WHERE c.name = :name")
     Optional<IngredientCategory> findByName(@Param("name") String name);
+
+    @Query("SELECT c FROM IngredientCategory c JOIN c.ingredients i WHERE i.name = :ingredientName")
+    Optional<IngredientCategory> findByIngredientName(@Param("ingredientName") String ingredientName);
 }
 
