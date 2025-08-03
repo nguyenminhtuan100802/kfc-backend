@@ -15,7 +15,6 @@ import com.codegym.kfcbackend.entity.BillItemDetail;
 import com.codegym.kfcbackend.entity.Combo;
 import com.codegym.kfcbackend.entity.ComboItem;
 import com.codegym.kfcbackend.entity.Ingredient;
-import com.codegym.kfcbackend.entity.IngredientCategory;
 import com.codegym.kfcbackend.entity.Product;
 import com.codegym.kfcbackend.entity.RecipeItem;
 import com.codegym.kfcbackend.entity.User;
@@ -35,6 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -218,7 +218,7 @@ public class BillService implements IBillService {
                 boolean isNewStaff = true;
                 for (StaffSaleSummaryResponse staff : summaryReportResponse.getStaffSalesSummaries()) {
                     if (staff.getUsername().equals(bill.getStaff().getUsername())) {
-                        staff.setTotalProductsSold(staff.getTotalProductsSold() + 1);
+                        staff.setTotalBillSold(staff.getTotalBillSold() + 1);
                         isNewStaff = false;
                         break;
                     }
@@ -228,8 +228,8 @@ public class BillService implements IBillService {
                             StaffSaleSummaryResponse.builder()
                                     .staffName(bill.getStaff().getFullName())
                                     .username(bill.getStaff().getUsername())
-                                    .roleName(bill.getStaff().getRole().getName())
-                                    .totalProductsSold(1L)
+                                    .roleName(bill.getStaff().getUserRoles().get(0).getRole().getName())
+                                    .totalBillSold(1L)
                                     .build()
                     );
                 }
@@ -237,11 +237,14 @@ public class BillService implements IBillService {
                 for (BillItem billItem : bill.getBillItems()) {
                     boolean isNewProductOrCombo = true;
                     String productNameOrComboName = null;
+                    String productCategoryNameOrComboCategoryName = null;
 
                     if (billItem.getProduct() != null) {
                         productNameOrComboName = billItem.getProduct().getName();
+                        productCategoryNameOrComboCategoryName = billItem.getProduct().getProductCategory().getName();
                     } else if (billItem.getCombo() != null) {
                         productNameOrComboName = billItem.getCombo().getName();
+                        productCategoryNameOrComboCategoryName = billItem.getCombo().getComboCategory().getName();
                     }
 
                     for (ProductSaleSummaryResponse product : summaryReportResponse.getProductSalesSummaries()) {
@@ -255,6 +258,7 @@ public class BillService implements IBillService {
                         summaryReportResponse.getProductSalesSummaries().add(
                                 ProductSaleSummaryResponse.builder()
                                         .productNameOrComboName(productNameOrComboName)
+                                        .productCategoryNameOrComboCategoryName(productCategoryNameOrComboCategoryName)
                                         .totalSold(Long.valueOf(billItem.getQuantity()))
                                         .build()
                         );
@@ -305,6 +309,19 @@ public class BillService implements IBillService {
         }
         summaryReportResponse.setTotalProfit(summaryReportResponse.getTotalRevenue().subtract(summaryReportResponse.getTotalCost()));
 
+//              sort
+        summaryReportResponse.getStaffSalesSummaries().sort(
+                Comparator.comparingLong(StaffSaleSummaryResponse::getTotalBillSold)
+                        .reversed()
+        );
+        summaryReportResponse.getProductSalesSummaries().sort(
+                Comparator.comparingLong(ProductSaleSummaryResponse::getTotalSold)
+                        .reversed()
+        );
+        summaryReportResponse.getIngredientUsedSummaries().sort(
+                Comparator.comparing(IngredientUsedSummaryResponse::getQuantityUsed)
+                        .reversed()
+        );
         return summaryReportResponse;
     }
 

@@ -26,7 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("products")
 public class ProductController {
-    private IProductService productService;
+    private final IProductService productService;
 
     public ProductController(IProductService productService) {
         this.productService = productService;

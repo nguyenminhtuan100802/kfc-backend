@@ -40,7 +40,7 @@ public class UserService implements IUserService {
                 .username(request.getUsername())
                 .password(PasswordUtils.generateRandomPassword(AppConstants.PASSWORD_LENGTH))
                 .isChangeDefaultPassword(false)
-                .role(existingRole)
+//                .userRoles(existingRole)
                 .build();
 
         User savedUser = this.userRepository.save(user);

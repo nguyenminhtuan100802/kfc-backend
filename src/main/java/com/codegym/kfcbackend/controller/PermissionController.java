@@ -1,11 +1,10 @@
 package com.codegym.kfcbackend.controller;
 
-import com.codegym.kfcbackend.dto.request.RoleRequest;
+import com.codegym.kfcbackend.dto.request.PermissionRequest;
 import com.codegym.kfcbackend.dto.response.ApiResponse;
-import com.codegym.kfcbackend.dto.response.RoleResponse;
-import com.codegym.kfcbackend.entity.Role;
-import com.codegym.kfcbackend.service.IRoleService;
-import com.codegym.kfcbackend.service.impl.RoleService;
+import com.codegym.kfcbackend.dto.response.PermissionResponse;
+import com.codegym.kfcbackend.entity.Permission;
+import com.codegym.kfcbackend.service.IPermissionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,20 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("roles")
-public class RoleController {
-    private final IRoleService roleService;
+@RequestMapping("permissions")
+public class PermissionController {
+    private final IPermissionService permissionService;
 
-    public RoleController(RoleService roleService) {
-        this.roleService = roleService;
+    public PermissionController(IPermissionService permissionService) {
+        this.permissionService = permissionService;
     }
 
     @PostMapping
-    public ResponseEntity<?> createRole(@RequestBody RoleRequest rquest) {
+    public ResponseEntity<?> createPermission(@RequestBody PermissionRequest rquest) {
         try {
-            Role result = roleService.createRole(rquest);
+            Permission permission = permissionService.createPermission(rquest);
             return ResponseEntity.ok(ApiResponse.builder()
-                    .message("Create role successfully")
+                    .message("Create permission successfully")
                     .build());
         } catch (Exception e) {
             return ResponseEntity
@@ -45,13 +44,13 @@ public class RoleController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllRoles() {
-        List<Role> roles = roleService.getAllRoles();
-        List<RoleResponse> responses = new ArrayList<>();
-        for (Role role : roles) {
-            responses.add(RoleResponse.builder()
-                    .id(role.getId())
-                    .name(role.getName())
+    public ResponseEntity<?> getAllPermissions() {
+        List<Permission> permissions = permissionService.getAllPermissions();
+        List<PermissionResponse> responses = new ArrayList<>();
+        for (Permission permission : permissions) {
+            responses.add(PermissionResponse.builder()
+                    .id(permission.getId())
+                    .permissionName(permission.getName())
                     .build());
         }
         return ResponseEntity.ok(ApiResponse.builder()
@@ -60,15 +59,15 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editRole(
+    public ResponseEntity<?> editPermission(
             @PathVariable Long id,
-            @RequestBody RoleRequest request
+            @RequestBody PermissionRequest request
     ) {
         try {
-            Role updated = roleService.editRole(id, request);
+            Permission updated = permissionService.editPermission(id, request);
             return ResponseEntity.ok(
                     ApiResponse.builder()
-                            .message("Updated role successfully")
+                            .message("Updated permission successfully")
                             .build()
             );
         } catch (RuntimeException e) {
@@ -81,11 +80,11 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteRole(@PathVariable Long id) {
+    public ResponseEntity<?> deletePermission(@PathVariable Long id) {
         try {
-            roleService.deleteRole(id);
+            permissionService.deletePermission(id);
             return ResponseEntity.ok(ApiResponse.builder()
-                    .message("Deleted role successfully")
+                    .message("Deleted permission successfully")
                     .build());
         } catch (RuntimeException e) {
             return ResponseEntity

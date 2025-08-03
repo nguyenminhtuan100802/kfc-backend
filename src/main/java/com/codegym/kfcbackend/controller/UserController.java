@@ -41,7 +41,7 @@ public class UserController {
                     .fullName(result.getFullName())
                     .username(result.getUsername())
                     .password(result.getPassword())
-                    .roleName(result.getRole().getName())
+                    .roleName(result.getUserRoles().get(0).getRole().getName())
                     .build();
 
             return ResponseEntity.ok(ApiResponse.builder()
@@ -64,7 +64,7 @@ public class UserController {
             String token = jwtTokenService.generateToken(existingUser);
             LoginResponse response = LoginResponse.builder()
                     .username(existingUser.getUsername())
-                    .roleName(existingUser.getRole().getName())
+                    .roleName(existingUser.getUserRoles().get(0).getRole().getName())
                     .isChangeDefaultPassword(existingUser.isChangeDefaultPassword())
                     .token(token)
                     .build();
@@ -87,7 +87,7 @@ public class UserController {
             User existingUser = userService.changeDefaultPassword(request);
             LoginResponse response = LoginResponse.builder()
                     .username(existingUser.getUsername())
-                    .roleName(existingUser.getRole().getName())
+                    .roleName(existingUser.getUserRoles().get(0).getRole().getName())
                     .isChangeDefaultPassword(existingUser.isChangeDefaultPassword())
                     .build();
             return ResponseEntity.ok(ApiResponse.builder()
@@ -113,7 +113,7 @@ public class UserController {
                     .fullName(user.getFullName())
                     .username(user.getUsername())
                     .password(user.getPassword())
-                    .roleName(user.getRole().getName())
+                    .roleName(user.getUserRoles().get(0).getRole().getName())
                     .build());
         }
         return ResponseEntity.ok(responses);

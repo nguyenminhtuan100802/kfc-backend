@@ -1,4 +1,4 @@
-package com.codegym.kfcbackend.dto.response;
+package com.codegym.kfcbackend.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class RoleResponse {
-    private Long id;
+public class RoleRequest {
     private String name;
 }

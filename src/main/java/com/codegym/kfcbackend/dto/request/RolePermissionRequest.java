@@ -11,6 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class RoleRquest {
-    private String name;
+public class RolePermissionRequest {
+    private String roleName;
+    private String permissionName;
 }

@@ -34,6 +34,4 @@ public class AppConstants {
     public static final String INFORMATION_EMPTY = "Some information are empty";
     public static final int MINIMUM_PASSWORD_CHARACTER = 4;
     public static final int PASSWORD_LENGTH = 10;
-
-
 }

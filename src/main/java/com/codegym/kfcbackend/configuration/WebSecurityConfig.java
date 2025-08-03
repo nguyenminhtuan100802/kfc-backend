@@ -1,5 +1,6 @@
 package com.codegym.kfcbackend.configuration;
 
+import com.codegym.kfcbackend.constant.PermissionConstant;
 import com.codegym.kfcbackend.filter.JwtTokenFilter;
 import com.codegym.kfcbackend.service.impl.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
@@ -56,54 +57,70 @@ public class WebSecurityConfig {
                     requests
                             .requestMatchers(POST, "/users/login").permitAll()
                             .requestMatchers(POST, "/users/change-default-password").permitAll()
-                            .requestMatchers(POST, "/users/create-employee").permitAll()
+                            .requestMatchers(POST, "/users/create-employee").hasAuthority(PermissionConstant.EMPLOYEE_CREATE)
 
-                            .requestMatchers(GET, "/products/**").permitAll()
-                            .requestMatchers(POST, "/products").hasAnyRole("ADMIN")
-                            .requestMatchers(PUT, "/products/*").hasAnyRole("ADMIN")
-                            .requestMatchers(DELETE, "/products/*").hasAnyRole("ADMIN")
+                            // Product
+                            .requestMatchers(GET, "/products/**").hasAuthority(PermissionConstant.PRODUCT_VIEW)
+                            .requestMatchers(POST, "/products").hasAuthority(PermissionConstant.PRODUCT_CREATE)
+                            .requestMatchers(PUT, "/products/*").hasAuthority(PermissionConstant.PRODUCT_UPDATE)
+                            .requestMatchers(DELETE, "/products/*").hasAuthority(PermissionConstant.PRODUCT_DELETE)
 
-                            .requestMatchers(GET, "/combos/**").permitAll()
-                            .requestMatchers(POST, "/combos").hasAnyRole("ADMIN")
-                            .requestMatchers(PUT, "/combos/*").hasAnyRole("ADMIN")
-                            .requestMatchers(DELETE, "/combos/*").hasAnyRole("ADMIN")
+                            // Combo
+                            .requestMatchers(GET, "/combos/**").hasAuthority(PermissionConstant.COMBO_VIEW)
+                            .requestMatchers(POST, "/combos").hasAuthority(PermissionConstant.COMBO_CREATE)
+                            .requestMatchers(PUT, "/combos/*").hasAuthority(PermissionConstant.COMBO_UPDATE)
+                            .requestMatchers(DELETE, "/combos/*").hasAuthority(PermissionConstant.COMBO_DELETE)
 
-                            .requestMatchers(POST, "/bills").permitAll()
-                            .requestMatchers(GET, "/bills/**").hasAnyRole("ADMIN")
-                            .requestMatchers(POST, "/bills/summary-report").hasAnyRole("ADMIN")
+                            // Bill
+                            .requestMatchers(POST, "/bills").hasAuthority(PermissionConstant.BILL_CREATE)
+                            .requestMatchers(GET, "/bills/**").hasAuthority(PermissionConstant.BILL_VIEW)
+                            .requestMatchers(POST, "/bills/summary-report").hasAuthority(PermissionConstant.BILL_VIEW)
 
-                            .requestMatchers(GET, "/ingredient-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(POST, "/ingredient-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(PUT, "/ingredient-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(DELETE, "/ingredient-categories/**").hasAnyRole("ADMIN")
+                            // Ingredient Category
+                            .requestMatchers(GET, "/ingredient-categories/**").hasAuthority(PermissionConstant.INGREDIENT_CATEGORY_VIEW)
+                            .requestMatchers(POST, "/ingredient-categories/**").hasAuthority(PermissionConstant.INGREDIENT_CATEGORY_CREATE)
+                            .requestMatchers(PUT, "/ingredient-categories/**").hasAuthority(PermissionConstant.INGREDIENT_CATEGORY_UPDATE)
+                            .requestMatchers(DELETE, "/ingredient-categories/**").hasAuthority(PermissionConstant.INGREDIENT_CATEGORY_DELETE)
 
-                            .requestMatchers(GET, "/combo-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(POST, "/combo-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(PUT, "/combo-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(DELETE, "/combo-categories/**").hasAnyRole("ADMIN")
+                            // Combo Category
+                            .requestMatchers(GET, "/combo-categories/**").hasAuthority(PermissionConstant.COMBO_CATEGORY_VIEW)
+                            .requestMatchers(POST, "/combo-categories/**").hasAuthority(PermissionConstant.COMBO_CATEGORY_CREATE)
+                            .requestMatchers(PUT, "/combo-categories/**").hasAuthority(PermissionConstant.COMBO_CATEGORY_UPDATE)
+                            .requestMatchers(DELETE, "/combo-categories/**").hasAuthority(PermissionConstant.COMBO_CATEGORY_DELETE)
 
-                            .requestMatchers(GET, "/product-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(POST, "/product-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(PUT, "/product-categories/**").hasAnyRole("ADMIN")
-                            .requestMatchers(DELETE, "/product-categories/**").hasAnyRole("ADMIN")
+                            // Product Category
+                            .requestMatchers(GET, "/product-categories/**").hasAuthority(PermissionConstant.PRODUCT_CATEGORY_VIEW)
+                            .requestMatchers(POST, "/product-categories/**").hasAuthority(PermissionConstant.PRODUCT_CATEGORY_CREATE)
+                            .requestMatchers(PUT, "/product-categories/**").hasAuthority(PermissionConstant.PRODUCT_CATEGORY_UPDATE)
+                            .requestMatchers(DELETE, "/product-categories/**").hasAuthority(PermissionConstant.PRODUCT_CATEGORY_DELETE)
 
-                            .requestMatchers(GET, "/unit-of-measures/**").hasAnyRole("ADMIN")
-                            .requestMatchers(POST, "/unit-of-measures/**").hasAnyRole("ADMIN")
-                            .requestMatchers(PUT, "/unit-of-measures/**").hasAnyRole("ADMIN")
-                            .requestMatchers(DELETE, "/unit-of-measures/**").hasAnyRole("ADMIN")
+                            // Unit of Measure
+                            .requestMatchers(GET, "/unit-of-measures/**").hasAuthority(PermissionConstant.UNIT_OF_MEASURE_VIEW)
+                            .requestMatchers(POST, "/unit-of-measures/**").hasAuthority(PermissionConstant.UNIT_OF_MEASURE_CREATE)
+                            .requestMatchers(PUT, "/unit-of-measures/**").hasAuthority(PermissionConstant.UNIT_OF_MEASURE_UPDATE)
+                            .requestMatchers(DELETE, "/unit-of-measures/**").hasAuthority(PermissionConstant.UNIT_OF_MEASURE_DELETE)
 
-                            .requestMatchers(GET, "/ingredients/**").hasAnyRole("ADMIN")
-                            .requestMatchers(POST, "/ingredients/**").hasAnyRole("ADMIN")
-                            .requestMatchers(PUT, "/ingredients/**").hasAnyRole("ADMIN")
-                            .requestMatchers(DELETE, "/ingredients/**").hasAnyRole("ADMIN")
+                            // Ingredient
+                            .requestMatchers(GET, "/ingredients/**").hasAuthority(PermissionConstant.INGREDIENT_VIEW)
+                            .requestMatchers(POST, "/ingredients/**").hasAuthority(PermissionConstant.INGREDIENT_CREATE)
+                            .requestMatchers(PUT, "/ingredients/**").hasAuthority(PermissionConstant.INGREDIENT_UPDATE)
+                            .requestMatchers(DELETE, "/ingredients/**").hasAuthority(PermissionConstant.INGREDIENT_DELETE)
 
-                            .requestMatchers(GET, "/stock-entries/**").hasAnyRole("ADMIN")
-                            .requestMatchers(POST, "/stock-entries/**").hasAnyRole("ADMIN")
-                            .requestMatchers(PUT, "/stock-entries/**").hasAnyRole("ADMIN")
-                            .requestMatchers(DELETE, "/stock-entries/**").hasAnyRole("ADMIN")
+                            // Stock Entry
+                            .requestMatchers(GET, "/stock-entries/**").hasAuthority(PermissionConstant.STOCK_ENTRY_VIEW)
+                            .requestMatchers(POST, "/stock-entries/**").hasAuthority(PermissionConstant.STOCK_ENTRY_CREATE)
+                            .requestMatchers(PUT, "/stock-entries/**").hasAuthority(PermissionConstant.STOCK_ENTRY_UPDATE)
+                            .requestMatchers(DELETE, "/stock-entries/**").hasAuthority(PermissionConstant.STOCK_ENTRY_DELETE)
 
-                            .requestMatchers(GET, "/roles").hasAnyRole("ADMIN")
-                            .requestMatchers(POST, "/roles").hasAnyRole("ADMIN")
+                            // Role
+                            .requestMatchers(GET, "/roles").hasAuthority(PermissionConstant.ROLE_VIEW)
+                            .requestMatchers(POST, "/roles").hasAuthority(PermissionConstant.ROLE_CREATE)
+                            .requestMatchers(PUT, "/roles/**").hasAuthority(PermissionConstant.ROLE_UPDATE)
+                            .requestMatchers(DELETE, "/roles/**").hasAuthority(PermissionConstant.ROLE_DELETE)
+
+//                            Role permission
+                            .requestMatchers(GET, "/role-permissions").hasAuthority(PermissionConstant.ROLE_PERMISSION_VIEW)
+                            .requestMatchers(PUT, "/role-permissions").hasAuthority(PermissionConstant.ROLE_PERMISSION_UPDATE)
 
                             .anyRequest().authenticated();
                 })

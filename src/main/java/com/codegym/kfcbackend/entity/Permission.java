@@ -21,13 +21,16 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Role {
+public class Permission {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
 
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(
+            mappedBy = "permission",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<RolePermission> rolePermissions;
 }

@@ -1,5 +1,6 @@
 package com.codegym.kfcbackend.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,6 +20,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 
 @Entity
@@ -36,15 +40,21 @@ public class User implements UserDetails {
     private String password;
     private boolean isChangeDefaultPassword;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "role_id")
-    private Role role;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<UserRole> userRoles;
 
-    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<SimpleGrantedAuthority> authorityList = new ArrayList<>();
-        authorityList.add(new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()));
-        return authorityList;
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        for (UserRole ur : userRoles) {
+            Role role = ur.getRole();
+            for (RolePermission rp : role.getRolePermissions()) {
+                if (rp.isAllowed() && rp.getPermission() != null) {
+                    authorities.add(new SimpleGrantedAuthority(rp.getPermission().getName()));
+                }
+            }
+        }
+        authorities.sort(Comparator.comparing(SimpleGrantedAuthority::getAuthority));
+        return authorities;
     }
 
     @Override

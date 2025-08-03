@@ -6,14 +6,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class StaffSaleSummaryResponse {
-    private String staffName;
-    private String username;
+public class RolePermissionResponse {
     private String roleName;
-    private Long totalBillSold;
+    List<PermissionResponse> permissions;
 }

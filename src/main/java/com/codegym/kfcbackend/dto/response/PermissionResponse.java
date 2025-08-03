@@ -11,9 +11,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class StaffSaleSummaryResponse {
-    private String staffName;
-    private String username;
-    private String roleName;
-    private Long totalBillSold;
+public class PermissionResponse {
+    private Long id;
+    private String permissionName;
+    private boolean isAllowed;
 }
