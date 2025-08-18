@@ -3,12 +3,12 @@ package com.codegym.kfcbackend.service.impl;
 import com.codegym.kfcbackend.constant.AppConstants;
 import com.codegym.kfcbackend.dto.request.ComboItemRequest;
 import com.codegym.kfcbackend.dto.request.ComboRequest;
-import com.codegym.kfcbackend.entity.ComboCategory;
-import com.codegym.kfcbackend.entity.ProductCategory;
+import com.codegym.kfcbackend.entity.Category;
 import com.codegym.kfcbackend.entity.Combo;
 import com.codegym.kfcbackend.entity.ComboItem;
 import com.codegym.kfcbackend.entity.Product;
-import com.codegym.kfcbackend.repository.ComboCategoryRepository;
+import com.codegym.kfcbackend.repository.CategoryRepository;
+import com.codegym.kfcbackend.repository.ComboItemRepository;
 import com.codegym.kfcbackend.repository.ComboRepository;
 import com.codegym.kfcbackend.repository.ProductRepository;
 import com.codegym.kfcbackend.service.IComboService;
@@ -24,16 +24,19 @@ import java.util.List;
 @Service
 public class ComboService implements IComboService {
     private final ComboRepository comboRepository;
+    private final ComboItemRepository comboItemRepository;
     private final ProductRepository productRepository;
-    private final ComboCategoryRepository comboCategoryRepository;
+    private final CategoryRepository categoryRepository;
 
     public ComboService(ComboRepository comboRepository,
+                        ComboItemRepository comboItemRepository,
                         ProductRepository productRepository,
-                        ComboCategoryRepository comboCategoryRepository
+                        CategoryRepository categoryRepository
     ) {
         this.comboRepository = comboRepository;
+        this.comboItemRepository = comboItemRepository;
         this.productRepository = productRepository;
-        this.comboCategoryRepository = comboCategoryRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
@@ -64,7 +67,7 @@ public class ComboService implements IComboService {
             throw new RuntimeException(String.format(AppConstants.COMBO_TIME_ERROR, startTime, endTime));
         }
 
-        ComboCategory existingComboCategory = comboCategoryRepository.findByName(request.getCategoryName())
+        Category existingComboCategory = categoryRepository.findByName(request.getCategoryName())
                 .orElseThrow(() -> new RuntimeException(
                         String.format(AppConstants.CATEGORY_NOT_FOUND,
                                 request.getCategoryName())));
@@ -74,9 +77,8 @@ public class ComboService implements IComboService {
             throw new RuntimeException(String.format(AppConstants.COMBO_ALREADY_EXISTS, request.getName()));
         }
 
+        Combo savedCombo = comboRepository.save(new Combo());
         BigDecimal totalPrice = BigDecimal.ZERO;
-        Combo newCombo = new Combo();
-        List<ComboItem> comboItems = new ArrayList<>();
         for (ComboItemRequest comboItemRequest : request.getComboItems()) {
             if (comboItemRequest.getQuantity() <= 0) {
                 throw new RuntimeException(AppConstants.PRODUCT_QUANTITY_ERROR);
@@ -91,30 +93,29 @@ public class ComboService implements IComboService {
 
             ComboItem comboItem = ComboItem.builder()
                     .product(existingProduct)
-                    .combo(newCombo)
                     .quantity(comboItemRequest.getQuantity())
+                    .combo(savedCombo)
                     .build();
-            comboItems.add(comboItem);
+            ComboItem savedComboItem = comboItemRepository.save(comboItem);
+
         }
 
         if (request.getDiscountAmount().compareTo(totalPrice) > 0) {
             throw new RuntimeException(AppConstants.DISCOUNT_ERROR);
         }
 
-        newCombo.setName(request.getName());
-        newCombo.setDescription(request.getDescription());
-        newCombo.setImageUrl(request.getImageUrl());
-        newCombo.setTotalPrice(totalPrice);
-        newCombo.setDiscountAmount(request.getDiscountAmount());
-        newCombo.setTotalPriceAfterDiscount(totalPrice.subtract(request.getDiscountAmount()));
-        newCombo.setDiscountStartDate(startDate);
-        newCombo.setDiscountEndDate(endDate);
-        newCombo.setDiscountStartTime(startTime);
-        newCombo.setDiscountEndTime(endTime);
-        newCombo.setComboCategory(existingComboCategory);
-        newCombo.setComboItems(comboItems);
+        savedCombo.setName(request.getName());
+        savedCombo.setDescription(request.getDescription());
+        savedCombo.setImageUrl(request.getImageUrl());
+        savedCombo.setTotalPrice(totalPrice);
+        savedCombo.setDiscountAmount(request.getDiscountAmount());
+        savedCombo.setTotalPriceAfterDiscount(totalPrice.subtract(request.getDiscountAmount()));
+        savedCombo.setDiscountStartDate(startDate);
+        savedCombo.setDiscountEndDate(endDate);
+        savedCombo.setDiscountStartTime(startTime);
+        savedCombo.setDiscountEndTime(endTime);
+        savedCombo.setComboCategory(existingComboCategory);
 
-        Combo savedCombo = comboRepository.save(newCombo);
         return savedCombo;
     }
 
@@ -125,6 +126,7 @@ public class ComboService implements IComboService {
     }
 
     @Override
+    @Transactional
     public Combo editCombo(Long id, ComboRequest request) {
         if (request.getDescription() == null || request.getDescription().trim().isBlank() ||
                 request.getImageUrl() == null || request.getImageUrl().trim().isBlank() ||
@@ -155,7 +157,7 @@ public class ComboService implements IComboService {
             throw new RuntimeException(String.format(AppConstants.COMBO_ALREADY_EXISTS, request.getName()));
         }
 
-        ComboCategory existingComboCategory = comboCategoryRepository.findByName(request.getCategoryName())
+        Category existingComboCategory = categoryRepository.findByName(request.getCategoryName())
                 .orElseThrow(() -> new RuntimeException(
                         String.format(AppConstants.CATEGORY_NOT_FOUND,
                                 request.getCategoryName())));
@@ -164,7 +166,7 @@ public class ComboService implements IComboService {
                 .orElseThrow(() -> new RuntimeException(
                         String.format("Combo not found with id %d", id)));
 
-        existingCombo.getComboItems().clear();
+        comboItemRepository.deleteByComboId(existingCombo.getId());
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (ComboItemRequest comboItemRequest : request.getComboItems()) {
             if (comboItemRequest.getQuantity() <= 0) {
@@ -183,7 +185,7 @@ public class ComboService implements IComboService {
                     .combo(existingCombo)
                     .quantity(comboItemRequest.getQuantity())
                     .build();
-            existingCombo.getComboItems().add(comboItem);
+            ComboItem savedComboItem = comboItemRepository.save(comboItem);
         }
 
         if (request.getDiscountAmount().compareTo(totalPrice) > 0) {
@@ -201,13 +203,15 @@ public class ComboService implements IComboService {
         existingCombo.setDiscountStartTime(startTime);
         existingCombo.setDiscountEndTime(endTime);
         existingCombo.setComboCategory(existingComboCategory);
-        Combo savedCombo = comboRepository.save(existingCombo);
-        return savedCombo;
+
+        return existingCombo;
     }
 
     @Override
+    @Transactional
     public void deleteCombo(Long id) {
         Combo existingCombo = comboRepository.findById(id).orElseThrow(() -> new RuntimeException("Combo not found with id " + id));
+        comboItemRepository.deleteByComboId(existingCombo.getId());
         comboRepository.delete(existingCombo);
     }
 }

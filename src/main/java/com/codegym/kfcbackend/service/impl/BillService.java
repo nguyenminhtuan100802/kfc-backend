@@ -19,11 +19,14 @@ import com.codegym.kfcbackend.entity.Product;
 import com.codegym.kfcbackend.entity.RecipeItem;
 import com.codegym.kfcbackend.entity.User;
 import com.codegym.kfcbackend.enums.BillStatus;
+import com.codegym.kfcbackend.repository.BillItemDetailRepository;
+import com.codegym.kfcbackend.repository.BillItemRepository;
 import com.codegym.kfcbackend.repository.BillRepository;
+import com.codegym.kfcbackend.repository.ComboItemRepository;
 import com.codegym.kfcbackend.repository.ComboRepository;
-import com.codegym.kfcbackend.repository.IngredientCategoryRepository;
 import com.codegym.kfcbackend.repository.IngredientRepository;
 import com.codegym.kfcbackend.repository.ProductRepository;
+import com.codegym.kfcbackend.repository.RecipeItemRepository;
 import com.codegym.kfcbackend.repository.UserRepository;
 import com.codegym.kfcbackend.service.IBillService;
 import jakarta.transaction.Transactional;
@@ -42,22 +45,31 @@ public class BillService implements IBillService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final ComboRepository comboRepository;
+    private final ComboItemRepository comboItemRepository;
     private final IngredientRepository ingredientRepository;
-    private final IngredientCategoryRepository ingredientCategoryRepository;
     private final BillRepository billRepository;
+    private final BillItemRepository billItemRepository;
+    private final BillItemDetailRepository billItemDetailRepository;
+    private final RecipeItemRepository recipeItemRepository;
 
     public BillService(UserRepository userRepository,
                        ProductRepository productRepository,
                        ComboRepository comboRepository,
+                       ComboItemRepository comboItemRepository,
                        IngredientRepository ingredientRepository,
-                       IngredientCategoryRepository ingredientCategoryRepository,
-                       BillRepository billRepository) {
+                       BillRepository billRepository,
+                       BillItemRepository billItemRepository,
+                       BillItemDetailRepository billItemDetailRepository,
+                       RecipeItemRepository recipeItemRepository) {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.comboRepository = comboRepository;
+        this.comboItemRepository = comboItemRepository;
         this.ingredientRepository = ingredientRepository;
-        this.ingredientCategoryRepository = ingredientCategoryRepository;
         this.billRepository = billRepository;
+        this.billItemRepository = billItemRepository;
+        this.billItemDetailRepository = billItemDetailRepository;
+        this.recipeItemRepository = recipeItemRepository;
     }
 
     @Override
@@ -71,33 +83,36 @@ public class BillService implements IBillService {
         User existingUser = userRepository.findByUsername(request.getStaffName())
                 .orElseThrow(() -> new RuntimeException("User not found: " + request.getStaffName()));
 
-        Bill bill = Bill.builder()
+        Bill savedBill = billRepository.save(Bill.builder()
                 .staff(existingUser)
                 .billDate(LocalDateTime.now())
-                .billItems(new ArrayList<>())
                 .totalRevenue(BigDecimal.ZERO)
                 .totalCost(BigDecimal.ZERO)
-                .build();
+                .build());
+
         for (BillItemRequest billItemRequest : request.getBillItems()) {
             if (billItemRequest.getQuantity() <= 0) {
                 throw new RuntimeException("Bill item quantity must be > 0");
             }
-            BillItem billItem = BillItem.builder()
+
+            BillItem savedBillItem = billItemRepository.save(BillItem.builder()
                     .quantity(billItemRequest.getQuantity())
-                    .billItemDetails(new ArrayList<>())
                     .totalCost(BigDecimal.ZERO)
-                    .bill(bill)
-                    .build();
+                    .bill(savedBill)
+                    .build());
+
             // Kiểm tra xem là PRODUCT hay COMBO
             Product existingProduct = productRepository.findByName(billItemRequest.getComboNameOrProductName()).orElse(null);
             if (existingProduct != null) {
-                billItem.setProduct(existingProduct);
-                billItem.setCombo(null);
-                billItem.setTotalPrice(existingProduct.getPrice().multiply(BigDecimal.valueOf(billItemRequest.getQuantity())));
+                savedBillItem.setProduct(existingProduct);
+                savedBillItem.setCombo(null);
+                savedBillItem.setTotalPrice(existingProduct.getPrice().multiply(BigDecimal.valueOf(billItemRequest.getQuantity())));
 
-                for (RecipeItem recipeItem : existingProduct.getRecipeItems()) {
+                List<RecipeItem> recipeItems = recipeItemRepository.findAllByProductId(existingProduct.getId());
+                for (RecipeItem recipeItem : recipeItems) {
                     Ingredient existingIngredient = ingredientRepository.findByName(recipeItem.getIngredient().getName()).orElseThrow(
                             () -> new RuntimeException("Ingredient not found: " + recipeItem.getIngredient().getName()));
+
                     BigDecimal usedQuantity = BigDecimal.valueOf(billItemRequest.getQuantity())
                             .multiply(recipeItem.getQuantity());
                     if (existingIngredient.getCurrentQuantity().compareTo(usedQuantity) < 0) {
@@ -105,24 +120,23 @@ public class BillService implements IBillService {
                     }
                     existingIngredient.setCurrentQuantity(existingIngredient.getCurrentQuantity().subtract(usedQuantity));
 
-                    BillItemDetail billItemDetail = BillItemDetail.builder()
+                    BillItemDetail savedBillItemDetail = billItemDetailRepository.save(BillItemDetail.builder()
                             .ingredientName(existingIngredient.getName())
                             .unitCost(existingIngredient.getAverageCost())
                             .totalCost(existingIngredient.getAverageCost().multiply(usedQuantity))
                             .usedQuantity(usedQuantity)
                             .baseUnitCode(existingIngredient.getBaseUnitCode())
-                            .billItem(billItem)
-                            .build();
-                    billItem.setTotalCost(billItem.getTotalCost().add(billItemDetail.getTotalCost()));
-                    billItem.getBillItemDetails().add(billItemDetail);
+                            .billItem(savedBillItem)
+                            .build());
+                    savedBillItem.setTotalCost(savedBillItem.getTotalCost().add(savedBillItemDetail.getTotalCost()));
                 }
             } else {
                 Combo existingCombo = comboRepository.findByName(billItemRequest.getComboNameOrProductName()).orElse(null);
                 if (existingCombo != null) {
-                    billItem.setCombo(existingCombo);
-                    billItem.setProduct(null);
+                    savedBillItem.setCombo(existingCombo);
+                    savedBillItem.setProduct(null);
 
-                    LocalDateTime billTime = bill.getBillDate();
+                    LocalDateTime billTime = savedBill.getBillDate();
                     LocalDate discountStartDate = existingCombo.getDiscountStartDate();
                     LocalDate discountEndDate = existingCombo.getDiscountEndDate();
                     LocalTime discountStartTime = existingCombo.getDiscountStartTime();
@@ -135,18 +149,21 @@ public class BillService implements IBillService {
                     if (sameMonthAndYear) {
                         LocalTime billTimeOnly = billTime.toLocalTime();
                         if (!billTimeOnly.isBefore(discountStartTime) && !billTimeOnly.isAfter(discountEndTime)) {
-                            billItem.setTotalPrice(existingCombo.getTotalPriceAfterDiscount().multiply(BigDecimal.valueOf(billItemRequest.getQuantity())));
-                        } else {
-                            billItem.setTotalPrice(existingCombo.getTotalPrice().multiply(BigDecimal.valueOf(billItemRequest.getQuantity())));
+                            savedBillItem.setTotalPrice(existingCombo.getTotalPriceAfterDiscount()
+                                    .multiply(BigDecimal.valueOf(billItemRequest.getQuantity())));
                         }
                     } else {
-                        billItem.setTotalPrice(existingCombo.getTotalPrice().multiply(BigDecimal.valueOf(billItemRequest.getQuantity())));
+                        savedBillItem.setTotalPrice(existingCombo.getTotalPrice()
+                                .multiply(BigDecimal.valueOf(billItemRequest.getQuantity())));
                     }
 
-                    for (ComboItem comboItem : existingCombo.getComboItems()) {
+                    List<ComboItem> comboItems = comboItemRepository.findAllByComboId(existingCombo.getId());
+                    for (ComboItem comboItem : comboItems) {
                         existingProduct = productRepository.findByName(comboItem.getProduct().getName())
                                 .orElseThrow(() -> new RuntimeException("Product not found: " + comboItem.getProduct().getName()));
-                        for (RecipeItem recipeItem : existingProduct.getRecipeItems()) {
+
+                        List<RecipeItem> recipeItems = recipeItemRepository.findAllByProductId(existingProduct.getId());
+                        for (RecipeItem recipeItem : recipeItems) {
                             Ingredient existingIngredient = ingredientRepository.findByName(recipeItem.getIngredient().getName()).orElseThrow(
                                     () -> new RuntimeException("Ingredient not found: " + recipeItem.getIngredient().getName()));
 
@@ -159,28 +176,25 @@ public class BillService implements IBillService {
                             }
                             existingIngredient.setCurrentQuantity(existingIngredient.getCurrentQuantity().subtract(usedQuantity));
 
-                            BillItemDetail billItemDetail = BillItemDetail.builder()
+                            BillItemDetail savedBillItemDetail = billItemDetailRepository.save(BillItemDetail.builder()
                                     .ingredientName(existingIngredient.getName())
                                     .unitCost(existingIngredient.getAverageCost())
                                     .usedQuantity(usedQuantity)
                                     .totalCost(existingIngredient.getAverageCost().multiply(usedQuantity))
                                     .baseUnitCode(existingIngredient.getBaseUnitCode())
-                                    .billItem(billItem)
-                                    .build();
-                            billItem.getBillItemDetails().add(billItemDetail);
-                            billItem.setTotalCost(billItem.getTotalCost().add(billItemDetail.getTotalCost()));
+                                    .billItem(savedBillItem)
+                                    .build());
+                            savedBillItem.setTotalCost(savedBillItem.getTotalCost().add(savedBillItemDetail.getTotalCost()));
                         }
                     }
                 } else {
                     throw new RuntimeException("Combo name or product name not found: " + billItemRequest.getComboNameOrProductName());
                 }
             }
-            bill.setTotalRevenue(bill.getTotalRevenue().add(billItem.getTotalPrice()));
-            bill.setTotalCost(bill.getTotalCost().add(billItem.getTotalCost()));
-            bill.getBillItems().add(billItem);
+            savedBill.setTotalRevenue(savedBill.getTotalRevenue().add(savedBillItem.getTotalPrice()));
+            savedBill.setTotalCost(savedBill.getTotalCost().add(savedBillItem.getTotalCost()));
         }
-        bill.setStatus(BillStatus.PAID);
-        Bill savedBill = billRepository.save(bill);
+        savedBill.setStatus(BillStatus.PAID);
         return savedBill;
     }
 
@@ -234,7 +248,8 @@ public class BillService implements IBillService {
                     );
                 }
 //                product sale
-                for (BillItem billItem : bill.getBillItems()) {
+                List<BillItem> billItems = billItemRepository.findAllByBillId(bill.getId());
+                for (BillItem billItem : billItems) {
                     boolean isNewProductOrCombo = true;
                     String productNameOrComboName = null;
                     String productCategoryNameOrComboCategoryName = null;
@@ -266,8 +281,9 @@ public class BillService implements IBillService {
                 }
 
 //                used ingredient
-                for (BillItem billItem : bill.getBillItems()) {
-                    for (BillItemDetail billItemDetail : billItem.getBillItemDetails()) {
+                for (BillItem billItem : billItems) {
+                    List<BillItemDetail> billItemDetails = billItemDetailRepository.findAllByBillItemId(billItem.getId());
+                    for (BillItemDetail billItemDetail : billItemDetails) {
                         boolean isNewIngredient = true;
                         for (IngredientUsedSummaryResponse ingredient : summaryReportResponse.getIngredientUsedSummaries()) {
                             if (billItemDetail.getIngredientName().equals(ingredient.getIngredientName())) {
@@ -335,8 +351,10 @@ public class BillService implements IBillService {
             throw new RuntimeException("Bill đã bị hủy trước đó.");
         }
 
-        for (BillItem billItem : existingBill.getBillItems()) {
-            for (BillItemDetail detail : billItem.getBillItemDetails()) {
+        List<BillItem> billItems = billItemRepository.findAllByBillId(existingBill.getId());
+        for (BillItem billItem : billItems) {
+            List<BillItemDetail> billItemDetails = billItemDetailRepository.findAllByBillItemId(billItem.getId());
+            for (BillItemDetail detail : billItemDetails) {
                 Ingredient ingredient = ingredientRepository.findByName(detail.getIngredientName())
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy nguyên liệu: " + detail.getIngredientName()));
 

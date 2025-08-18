@@ -13,4 +13,5 @@ import lombok.Setter;
 @Builder
 public class CategoryRequest {
     private String name;
+    private String categoryTypeName;
 }

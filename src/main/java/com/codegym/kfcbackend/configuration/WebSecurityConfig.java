@@ -1,6 +1,7 @@
 package com.codegym.kfcbackend.configuration;
 
 import com.codegym.kfcbackend.constant.PermissionConstant;
+import com.codegym.kfcbackend.exception.CustomAccessDeniedHandler;
 import com.codegym.kfcbackend.filter.JwtTokenFilter;
 import com.codegym.kfcbackend.service.impl.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
@@ -17,11 +18,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
 
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -55,8 +51,10 @@ public class WebSecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(requests -> {
                     requests
-                            .requestMatchers(POST, "/users/login").permitAll()
-                            .requestMatchers(POST, "/users/change-default-password").permitAll()
+                            .requestMatchers( "/test/**").permitAll()
+
+                            .requestMatchers(POST, "/auths/login").permitAll()
+                            .requestMatchers(POST, "/passwords/change-default-password").permitAll()
                             .requestMatchers(POST, "/users/create-employee").hasAuthority(PermissionConstant.EMPLOYEE_CREATE)
 
                             // Product
@@ -76,23 +74,17 @@ public class WebSecurityConfig {
                             .requestMatchers(GET, "/bills/**").hasAuthority(PermissionConstant.BILL_VIEW)
                             .requestMatchers(POST, "/bills/summary-report").hasAuthority(PermissionConstant.BILL_VIEW)
 
-                            // Ingredient Category
-                            .requestMatchers(GET, "/ingredient-categories/**").hasAuthority(PermissionConstant.INGREDIENT_CATEGORY_VIEW)
-                            .requestMatchers(POST, "/ingredient-categories/**").hasAuthority(PermissionConstant.INGREDIENT_CATEGORY_CREATE)
-                            .requestMatchers(PUT, "/ingredient-categories/**").hasAuthority(PermissionConstant.INGREDIENT_CATEGORY_UPDATE)
-                            .requestMatchers(DELETE, "/ingredient-categories/**").hasAuthority(PermissionConstant.INGREDIENT_CATEGORY_DELETE)
+                            // Category type
+                            .requestMatchers(GET, "/category-types/**").hasAuthority(PermissionConstant.CATEGORY_TYPE_VIEW)
+                            .requestMatchers(POST, "/category-types/**").hasAuthority(PermissionConstant.CATEGORY_TYPE_CREATE)
+                            .requestMatchers(PUT, "/category-types/**").hasAuthority(PermissionConstant.CATEGORY_TYPE_UPDATE)
+                            .requestMatchers(DELETE, "/category-types/**").hasAuthority(PermissionConstant.CATEGORY_TYPE_DELETE)
 
-                            // Combo Category
-                            .requestMatchers(GET, "/combo-categories/**").hasAuthority(PermissionConstant.COMBO_CATEGORY_VIEW)
-                            .requestMatchers(POST, "/combo-categories/**").hasAuthority(PermissionConstant.COMBO_CATEGORY_CREATE)
-                            .requestMatchers(PUT, "/combo-categories/**").hasAuthority(PermissionConstant.COMBO_CATEGORY_UPDATE)
-                            .requestMatchers(DELETE, "/combo-categories/**").hasAuthority(PermissionConstant.COMBO_CATEGORY_DELETE)
-
-                            // Product Category
-                            .requestMatchers(GET, "/product-categories/**").hasAuthority(PermissionConstant.PRODUCT_CATEGORY_VIEW)
-                            .requestMatchers(POST, "/product-categories/**").hasAuthority(PermissionConstant.PRODUCT_CATEGORY_CREATE)
-                            .requestMatchers(PUT, "/product-categories/**").hasAuthority(PermissionConstant.PRODUCT_CATEGORY_UPDATE)
-                            .requestMatchers(DELETE, "/product-categories/**").hasAuthority(PermissionConstant.PRODUCT_CATEGORY_DELETE)
+                            // Category
+                            .requestMatchers(GET, "/categories/**").hasAuthority(PermissionConstant.CATEGORY_VIEW)
+                            .requestMatchers(POST, "/categories/**").hasAuthority(PermissionConstant.CATEGORY_CREATE)
+                            .requestMatchers(PUT, "/categories/**").hasAuthority(PermissionConstant.CATEGORY_UPDATE)
+                            .requestMatchers(DELETE, "/categories/**").hasAuthority(PermissionConstant.CATEGORY_DELETE)
 
                             // Unit of Measure
                             .requestMatchers(GET, "/unit-of-measures/**").hasAuthority(PermissionConstant.UNIT_OF_MEASURE_VIEW)

@@ -33,6 +33,4 @@ public class RolePermission {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "permission_id")
     private Permission permission;
-
-
 }

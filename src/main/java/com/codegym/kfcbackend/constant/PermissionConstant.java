@@ -16,21 +16,16 @@ public class PermissionConstant {
     public static final String BILL_CREATE = "BILL_CREATE";
     public static final String BILL_UPDATE = "BILL_UPDATE";
     public static final String BILL_DELETE = "BILL_DELETE";
-    // Ingredient Category
-    public static final String INGREDIENT_CATEGORY_VIEW = "INGREDIENT_CATEGORY_VIEW";
-    public static final String INGREDIENT_CATEGORY_CREATE = "INGREDIENT_CATEGORY_CREATE";
-    public static final String INGREDIENT_CATEGORY_UPDATE = "INGREDIENT_CATEGORY_UPDATE";
-    public static final String INGREDIENT_CATEGORY_DELETE = "INGREDIENT_CATEGORY_DELETE";
-    // Combo Category
-    public static final String COMBO_CATEGORY_VIEW = "COMBO_CATEGORY_VIEW";
-    public static final String COMBO_CATEGORY_CREATE = "COMBO_CATEGORY_CREATE";
-    public static final String COMBO_CATEGORY_UPDATE = "COMBO_CATEGORY_UPDATE";
-    public static final String COMBO_CATEGORY_DELETE = "COMBO_CATEGORY_DELETE";
-    // Product Category
-    public static final String PRODUCT_CATEGORY_VIEW = "PRODUCT_CATEGORY_VIEW";
-    public static final String PRODUCT_CATEGORY_CREATE = "PRODUCT_CATEGORY_CREATE";
-    public static final String PRODUCT_CATEGORY_UPDATE = "PRODUCT_CATEGORY_UPDATE";
-    public static final String PRODUCT_CATEGORY_DELETE = "PRODUCT_CATEGORY_DELETE";
+    // Category type
+    public static final String CATEGORY_TYPE_VIEW = "CATEGORY_TYPE_VIEW";
+    public static final String CATEGORY_TYPE_CREATE = "CATEGORY_TYPE_CREATE";
+    public static final String CATEGORY_TYPE_UPDATE = "CATEGORY_TYPE_UPDATE";
+    public static final String CATEGORY_TYPE_DELETE = "CATEGORY_TYPE_DELETE";
+    // Category
+    public static final String CATEGORY_VIEW = "CATEGORY_VIEW";
+    public static final String CATEGORY_CREATE = "CATEGORY_CREATE";
+    public static final String CATEGORY_UPDATE = "CATEGORY_UPDATE";
+    public static final String CATEGORY_DELETE = "CATEGORY_DELETE";
     // Unit of Measure
     public static final String UNIT_OF_MEASURE_VIEW = "UNIT_OF_MEASURE_VIEW";
     public static final String UNIT_OF_MEASURE_CREATE = "UNIT_OF_MEASURE_CREATE";

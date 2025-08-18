@@ -2,19 +2,24 @@ package com.codegym.kfcbackend.service.impl;
 
 import com.codegym.kfcbackend.constant.AppConstants;
 import com.codegym.kfcbackend.dto.request.UnitOfMeasureRequest;
+import com.codegym.kfcbackend.dto.response.PageCacheResponse;
 import com.codegym.kfcbackend.entity.UnitOfMeasure;
+import com.codegym.kfcbackend.exception.BusinessException;
 import com.codegym.kfcbackend.repository.UnitOfMeasureRepository;
 import com.codegym.kfcbackend.service.IUnitOfMeasureService;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class UnitOfMeasureService implements IUnitOfMeasureService {
     private final UnitOfMeasureRepository unitOfMeasureRepository;
@@ -24,23 +29,22 @@ public class UnitOfMeasureService implements IUnitOfMeasureService {
     }
 
     @Override
+    @CacheEvict(value = "unitOfMeasures", allEntries = true)
     public UnitOfMeasure createUnitOfMeasure(UnitOfMeasureRequest request) {
-        if (request.getCode().isBlank() || request.getBaseUnitCode().isBlank()) {
-            throw new RuntimeException(AppConstants.INFORMATION_EMPTY);
+        String code = request.getCode().toLowerCase().trim();
+        String baseUnitCode = request.getBaseUnitCode().toLowerCase().trim();
+        if (code.equals(baseUnitCode)) {
+            throw new BusinessException(AppConstants.UNIT_OF_MEASURE_ERROR);
         }
-        if (request.getFactorToBase().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException(AppConstants.FACTOR_TO_BASE_ERROR);
-        }
-        UnitOfMeasure existingUnitOfMeasure = unitOfMeasureRepository.findByCodename(request.getCode().toLowerCase()).orElse(null);
+
+        UnitOfMeasure existingUnitOfMeasure = unitOfMeasureRepository.findByCodename(code).orElse(null);
         if (existingUnitOfMeasure != null) {
-            throw new RuntimeException(String.format(AppConstants.UNIT_OF_MEASURE_ALREADY_EXISTS, request.getCode()));
+            throw new BusinessException(String.format(AppConstants.UNIT_OF_MEASURE_ALREADY_EXISTS, code));
         }
-        if (request.getCode().toLowerCase().equals(request.getBaseUnitCode().toLowerCase())) {
-            throw new RuntimeException(AppConstants.UNIT_OF_MEASURE_ERROR);
-        }
+
         UnitOfMeasure unitOfMeasure = UnitOfMeasure.builder()
-                .code(request.getCode().toLowerCase())
-                .baseUnitCode(request.getBaseUnitCode().toLowerCase())
+                .code(code)
+                .baseUnitCode(baseUnitCode)
                 .factorToBase(request.getFactorToBase())
                 .createdBy(SecurityContextHolder.getContext().getAuthentication().getName())
                 .build();
@@ -49,10 +53,16 @@ public class UnitOfMeasureService implements IUnitOfMeasureService {
     }
 
     @Override
-    public Page<UnitOfMeasure> getUnitsByKeyword(String keyword, int page, int size) {
+    @Cacheable(value = "unitOfMeasures", key = "'page-' + #page + '-' + #size + '-' + #keyword")
+    public PageCacheResponse<UnitOfMeasure> getUnitsByKeyword(String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<UnitOfMeasure> unitOfMeasures = unitOfMeasureRepository.findAllByKeyword(keyword, pageable);
-        return unitOfMeasures;
+        PageCacheResponse<UnitOfMeasure> pageCacheResponse = PageCacheResponse.<UnitOfMeasure>builder()
+                .content(unitOfMeasures.getContent())
+                .totalElements(unitOfMeasures.getTotalElements())
+                .totalPages(unitOfMeasures.getTotalPages())
+                .build();
+        return pageCacheResponse;
     }
 
     @Override
@@ -62,37 +72,35 @@ public class UnitOfMeasureService implements IUnitOfMeasureService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = "unitOfMeasures", allEntries = true)
     public UnitOfMeasure editUnitOfMeasure(Long id, UnitOfMeasureRequest request) {
-        if (request.getCode().isBlank() || request.getBaseUnitCode().isBlank()) {
-            throw new RuntimeException(AppConstants.INFORMATION_EMPTY);
-        }
-        if (request.getCode().toLowerCase().equals(request.getBaseUnitCode().toLowerCase())) {
-            throw new RuntimeException(AppConstants.UNIT_OF_MEASURE_ERROR);
-        }
-        if (request.getFactorToBase().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException(AppConstants.FACTOR_TO_BASE_ERROR);
-        }
-        UnitOfMeasure existingUnitOfMeasure = unitOfMeasureRepository.findByCodename(request.getCode().toLowerCase()).orElse(null);
-        if (existingUnitOfMeasure != null && !existingUnitOfMeasure.getId().equals(id)) {
-            throw new RuntimeException(String.format(AppConstants.UNIT_OF_MEASURE_ALREADY_EXISTS, request.getCode()));
+        String code = request.getCode().toLowerCase().trim();
+        String baseUnitCode = request.getBaseUnitCode().toLowerCase().trim();
+        if (code.equals(baseUnitCode)) {
+            throw new BusinessException(AppConstants.UNIT_OF_MEASURE_ERROR);
         }
 
         UnitOfMeasure updateUnitOfMeasure = unitOfMeasureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(String.format(AppConstants.UNIT_OF_MEASURE_NOT_FOUND_WITH_ID, id)));
+                .orElseThrow(() -> new BusinessException(String.format(AppConstants.UNIT_OF_MEASURE_NOT_FOUND_WITH_ID, id)));
 
-        updateUnitOfMeasure.setCode(request.getCode().toLowerCase());
+        if (!updateUnitOfMeasure.getId().equals(id)) {
+            throw new BusinessException(String.format(AppConstants.UNIT_OF_MEASURE_ALREADY_EXISTS, code));
+        }
+
+        updateUnitOfMeasure.setCode(code);
         updateUnitOfMeasure.setBaseUnitCode(request.getBaseUnitCode().toLowerCase());
         updateUnitOfMeasure.setFactorToBase(request.getFactorToBase());
         updateUnitOfMeasure.setModifiedBy(SecurityContextHolder.getContext().getAuthentication().getName());
 
-        UnitOfMeasure savedUnitOfMeasure = unitOfMeasureRepository.save(updateUnitOfMeasure);
-        return savedUnitOfMeasure;
+        return updateUnitOfMeasure;
     }
 
     @Override
+    @CacheEvict(value = "unitOfMeasures", allEntries = true)
     public void deleteUnitOfMeasure(Long id) {
         UnitOfMeasure existingUnitOfMeasure = unitOfMeasureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(String.format(AppConstants.UNIT_OF_MEASURE_NOT_FOUND_WITH_ID, id)));
+                .orElseThrow(() -> new BusinessException(String.format(AppConstants.UNIT_OF_MEASURE_NOT_FOUND_WITH_ID, id)));
         unitOfMeasureRepository.delete(existingUnitOfMeasure);
     }
 }

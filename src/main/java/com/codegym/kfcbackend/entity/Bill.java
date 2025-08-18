@@ -49,7 +49,4 @@ public class Bill {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "staff_id")
     private User staff;
-
-    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BillItem> billItems;
 }

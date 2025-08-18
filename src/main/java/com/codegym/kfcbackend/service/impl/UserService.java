@@ -48,43 +48,8 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User login(LoginRequest request) {
-        User existingUser = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException(AppConstants.LOGIN_FAILED));
-
-        if (!request.getPassword().equals(existingUser.getPassword())) {
-            throw new RuntimeException(AppConstants.LOGIN_FAILED);
-        }
-
-        return existingUser;
-    }
-
-    @Override
     public List<User> getAllUsers() {
         List<User> users = userRepository.findAll();
         return users;
-    }
-
-    @Override
-    public User changeDefaultPassword(ChangeDefaultPasswordRequest request) {
-        User existingUser = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException(AppConstants.LOGIN_FAILED));
-
-        if (!request.getCurrentPassword().equals(existingUser.getPassword())) {
-            throw new RuntimeException(AppConstants.LOGIN_FAILED);
-        }
-
-        if (request.getNewPassword().equals(existingUser.getPassword())) {
-            throw new RuntimeException(AppConstants.NEW_PASSWORD_IS_OLD);
-        }
-
-        if (!PasswordUtils.isValidPassword(request.getNewPassword())) {
-            throw new RuntimeException(AppConstants.NEW_PASSWORD_IS_NOT_VALID);
-        }
-
-        existingUser.setPassword(request.getNewPassword());
-        existingUser.setChangeDefaultPassword(true);
-        User savedUser = userRepository.save(existingUser);
-        return savedUser;
     }
 }

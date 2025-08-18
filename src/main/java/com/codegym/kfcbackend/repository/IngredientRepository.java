@@ -26,4 +26,7 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
             @Param("categoryId") Long categoryId,
             Pageable pageable
     );
+
+    @Query("SELECT COUNT(i) FROM Ingredient i WHERE i.ingredientCategory.id = :ingredientCategoryId")
+    long countByCategoryId(@Param("ingredientCategoryId") Long ingredientCategoryId);
 }

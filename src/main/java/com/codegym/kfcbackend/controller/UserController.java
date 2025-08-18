@@ -24,13 +24,10 @@ import java.util.List;
 @RestController
 @RequestMapping("users")
 public class UserController {
-    private IUserService userService;
-    private JwtTokenService jwtTokenService;
+    private final IUserService userService;
 
-    public UserController(IUserService userService,
-                          JwtTokenService jwtTokenService) {
+    public UserController(IUserService userService) {
         this.userService = userService;
-        this.jwtTokenService = jwtTokenService;
     }
 
     @PostMapping(value = "create-employee")
@@ -48,53 +45,6 @@ public class UserController {
                     .data(response)
                     .message(AppConstants.USER_CREATED_SUCCESS)
                     .build());
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.builder()
-                            .message(e.getMessage())
-                            .build());
-        }
-    }
-
-    @PostMapping(value = "login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        try {
-            User existingUser = userService.login(request);
-            String token = jwtTokenService.generateToken(existingUser);
-            LoginResponse response = LoginResponse.builder()
-                    .username(existingUser.getUsername())
-                    .roleName(existingUser.getUserRoles().get(0).getRole().getName())
-                    .isChangeDefaultPassword(existingUser.isChangeDefaultPassword())
-                    .token(token)
-                    .build();
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .data(response)
-                    .build());
-//            return ResponseEntity.badRequest().body(result);
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.builder()
-                            .message(e.getMessage())
-                            .build());
-        }
-    }
-
-    @PostMapping(value = "change-default-password")
-    public ResponseEntity<?> changeDefaultPassword(@RequestBody ChangeDefaultPasswordRequest request) {
-        try {
-            User existingUser = userService.changeDefaultPassword(request);
-            LoginResponse response = LoginResponse.builder()
-                    .username(existingUser.getUsername())
-                    .roleName(existingUser.getUserRoles().get(0).getRole().getName())
-                    .isChangeDefaultPassword(existingUser.isChangeDefaultPassword())
-                    .build();
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .data(response)
-                    .message(AppConstants.PASSWORD_CHANGED_SUCCESS)
-                    .build());
-//            return ResponseEntity.badRequest().body(result);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)

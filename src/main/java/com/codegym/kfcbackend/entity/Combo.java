@@ -50,10 +50,7 @@ public class Combo {
     private LocalTime discountStartTime;
     private LocalTime discountEndTime;
 
-    @OneToMany(mappedBy = "combo", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ComboItem> comboItems;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne
     @JoinColumn(name = "combo_category_id")
-    private ComboCategory comboCategory;
+    private Category comboCategory;
 }

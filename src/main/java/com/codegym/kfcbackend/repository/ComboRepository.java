@@ -10,4 +10,7 @@ import java.util.Optional;
 public interface ComboRepository extends JpaRepository<Combo, Long> {
     @Query("SELECT c FROM Combo c WHERE c.name = :name")
     Optional<Combo> findByName(@Param("name") String name);
+
+    @Query("SELECT COUNT(c) FROM Combo c WHERE c.comboCategory.id = :comboCategoryId")
+    long countByCategoryId(@Param("comboCategoryId") Long comboCategoryId);
 }

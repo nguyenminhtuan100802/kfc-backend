@@ -51,24 +51,30 @@ public class IngredientController {
             @RequestParam(value = "size", defaultValue = "3") int size,
             @RequestParam(value = "ingredientCategoryId",  required = false) Long categoryId
     ) {
-        Page<Ingredient> pageResult = ingredientService.getIngredientByKeyword(keyword, page, size, categoryId);
-        List<Ingredient> ingredients = pageResult.getContent();
-        List<IngredientResponse> responses = new ArrayList<>();
-        for (Ingredient ingredient : ingredients) {
-            responses.add(IngredientResponse.builder()
-                    .id(ingredient.getId())
-                    .name(ingredient.getName())
-                    .baseUnitCode(ingredient.getBaseUnitCode())
-                    .averageCost(ingredient.getAverageCost())
-                    .currentQuantity(ingredient.getCurrentQuantity())
-                    .ingredientCategoryName(ingredient.getIngredientCategory().getName())
+        try{
+            Page<Ingredient> pageResult = ingredientService.getIngredientByKeyword(keyword, page, size, categoryId);
+            List<Ingredient> ingredients = pageResult.getContent();
+            List<IngredientResponse> responses = new ArrayList<>();
+            for (Ingredient ingredient : ingredients) {
+                responses.add(IngredientResponse.builder()
+                        .id(ingredient.getId())
+                        .name(ingredient.getName())
+                        .baseUnitCode(ingredient.getBaseUnitCode())
+                        .averageCost(ingredient.getAverageCost())
+                        .currentQuantity(ingredient.getCurrentQuantity())
+                        .ingredientCategoryName(ingredient.getIngredientCategory().getName())
+                        .build());
+            }
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .data(responses)
+                    .totalElements(pageResult.getTotalElements())
+                    .totalPages((long) pageResult.getTotalPages())
+                    .build());
+        }catch(Exception e){
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .message(e.getMessage())
                     .build());
         }
-        return ResponseEntity.ok(ApiResponse.builder()
-                .data(responses)
-                .totalElements(pageResult.getTotalElements())
-                .totalPages((long) pageResult.getTotalPages())
-                .build());
     }
 
     @GetMapping(value = "all")

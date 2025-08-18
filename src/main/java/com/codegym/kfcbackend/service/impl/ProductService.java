@@ -3,14 +3,15 @@ package com.codegym.kfcbackend.service.impl;
 import com.codegym.kfcbackend.constant.AppConstants;
 import com.codegym.kfcbackend.dto.request.ProductRequest;
 import com.codegym.kfcbackend.dto.request.RecipeItemRequest;
-import com.codegym.kfcbackend.entity.ProductCategory;
+import com.codegym.kfcbackend.entity.Category;
 import com.codegym.kfcbackend.entity.Ingredient;
 import com.codegym.kfcbackend.entity.Product;
 import com.codegym.kfcbackend.entity.RecipeItem;
 import com.codegym.kfcbackend.entity.UnitOfMeasure;
+import com.codegym.kfcbackend.repository.CategoryRepository;
 import com.codegym.kfcbackend.repository.IngredientRepository;
-import com.codegym.kfcbackend.repository.ProductCategoryRepository;
 import com.codegym.kfcbackend.repository.ProductRepository;
+import com.codegym.kfcbackend.repository.RecipeItemRepository;
 import com.codegym.kfcbackend.repository.UnitOfMeasureRepository;
 import com.codegym.kfcbackend.service.IProductService;
 import jakarta.transaction.Transactional;
@@ -26,18 +27,21 @@ import java.util.List;
 @Service
 public class ProductService implements IProductService {
     private final ProductRepository productRepository;
-    private final ProductCategoryRepository productCategoryRepository;
     private final IngredientRepository ingredientRepository;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
+    private final CategoryRepository categoryRepository;
+    private final RecipeItemRepository recipeItemRepository;
 
     public ProductService(ProductRepository productRepository,
-                          ProductCategoryRepository productCategoryRepository,
                           IngredientRepository ingredientRepository,
-                          UnitOfMeasureRepository unitOfMeasureRepository) {
+                          UnitOfMeasureRepository unitOfMeasureRepository,
+                          CategoryRepository categoryRepository,
+                          RecipeItemRepository recipeItemRepository) {
         this.productRepository = productRepository;
-        this.productCategoryRepository = productCategoryRepository;
         this.ingredientRepository = ingredientRepository;
         this.unitOfMeasureRepository = unitOfMeasureRepository;
+        this.categoryRepository = categoryRepository;
+        this.recipeItemRepository = recipeItemRepository;
     }
 
     @Override
@@ -52,7 +56,7 @@ public class ProductService implements IProductService {
         if (request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException(AppConstants.PRODUCT_PRICE_ERROR);
         }
-        ProductCategory existingProductCategory = productCategoryRepository.findByName(request.getCategoryName())
+        Category existingProductCategory = categoryRepository.findByName(request.getCategoryName())
                 .orElseThrow(() -> new RuntimeException(
                         String.format(AppConstants.CATEGORY_NOT_FOUND,
                                 request.getCategoryName())));
@@ -62,14 +66,13 @@ public class ProductService implements IProductService {
             throw new RuntimeException(String.format(AppConstants.PRODUCT_ALREADY_EXISTS, request.getName()));
         }
 
-        Product product = Product.builder()
+        Product savedProduct = productRepository.save(Product.builder()
                 .name(request.getName())
                 .price(request.getPrice())
                 .description(request.getDescription())
                 .imageUrl(request.getImageUrl())
                 .productCategory(existingProductCategory)
-                .recipeItems(new ArrayList<>())
-                .build();
+                .build());
 
         for (RecipeItemRequest recipeItemRequest : request.getRecipeItems()) {
             if (recipeItemRequest.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
@@ -87,12 +90,11 @@ public class ProductService implements IProductService {
                     .quantity(recipeItemRequest.getQuantity())
                     .baseUnitCode(existingUnitOfMeasure.getBaseUnitCode())
                     .ingredient(existingIngredient)
-                    .product(product)
+                    .product(savedProduct)
                     .build();
-            product.getRecipeItems().add(recipeItem);
+            RecipeItem savedRecipeItem = recipeItemRepository.save(recipeItem);
         }
 
-        Product savedProduct = productRepository.save(product);
         return savedProduct;
     }
 
@@ -108,14 +110,14 @@ public class ProductService implements IProductService {
         if (request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException(AppConstants.PRODUCT_PRICE_ERROR);
         }
-        ProductCategory existingProductCategory = productCategoryRepository.findByName(request.getCategoryName())
+        Category existingProductCategory = categoryRepository.findByName(request.getCategoryName())
                 .orElseThrow(() -> new RuntimeException(
                         String.format(AppConstants.CATEGORY_NOT_FOUND,
                                 request.getCategoryName())));
 
         Product existingProduct = productRepository.findByName(request.getName()).
                 orElseThrow(() -> new RuntimeException("Product with name " + request.getName() + " not found"));
-        if (existingProduct != null && !existingProduct.getId().equals(id)) {
+        if (!existingProduct.getId().equals(id)) {
             throw new RuntimeException(String.format(AppConstants.PRODUCT_ALREADY_EXISTS, request.getName()));
         }
 
@@ -124,7 +126,7 @@ public class ProductService implements IProductService {
         existingProduct.setDescription(request.getDescription());
         existingProduct.setImageUrl(request.getImageUrl());
         existingProduct.setProductCategory(existingProductCategory);
-        existingProduct.getRecipeItems().clear();
+        recipeItemRepository.deleteByProductId(existingProduct.getId());
 
         for (RecipeItemRequest recipeItemRequest : request.getRecipeItems()) {
             if (recipeItemRequest.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
@@ -145,7 +147,7 @@ public class ProductService implements IProductService {
                     .product(existingProduct)
                     .build();
 
-            existingProduct.getRecipeItems().add(recipeItem);
+            RecipeItem savedRecipeItem = recipeItemRepository.save(recipeItem);
         }
         Product savedProduct = productRepository.save(existingProduct);
         return savedProduct;

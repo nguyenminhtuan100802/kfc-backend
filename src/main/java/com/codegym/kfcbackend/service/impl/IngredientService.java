@@ -2,11 +2,12 @@ package com.codegym.kfcbackend.service.impl;
 
 import com.codegym.kfcbackend.constant.AppConstants;
 import com.codegym.kfcbackend.dto.request.IngredientRequest;
+import com.codegym.kfcbackend.entity.Category;
 import com.codegym.kfcbackend.entity.Ingredient;
-import com.codegym.kfcbackend.entity.IngredientCategory;
 import com.codegym.kfcbackend.entity.UnitOfMeasure;
-import com.codegym.kfcbackend.repository.IngredientCategoryRepository;
+import com.codegym.kfcbackend.repository.CategoryRepository;
 import com.codegym.kfcbackend.repository.IngredientRepository;
+import com.codegym.kfcbackend.repository.RecipeItemRepository;
 import com.codegym.kfcbackend.repository.UnitOfMeasureRepository;
 import com.codegym.kfcbackend.service.IIngredientService;
 import org.springframework.data.domain.Page;
@@ -21,14 +22,17 @@ import java.util.List;
 public class IngredientService implements IIngredientService {
     private final IngredientRepository ingredientRepository;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
-    private final IngredientCategoryRepository ingredientCategoryRepository;
+    private final CategoryRepository categoryRepository;
+    private final RecipeItemRepository recipeItemRepository;
 
     public IngredientService(IngredientRepository ingredientRepository,
                              UnitOfMeasureRepository unitOfMeasureRepository,
-                             IngredientCategoryRepository ingredientCategoryRepository) {
+                             CategoryRepository categoryRepository,
+                             RecipeItemRepository recipeItemRepository) {
         this.ingredientRepository = ingredientRepository;
         this.unitOfMeasureRepository = unitOfMeasureRepository;
-        this.ingredientCategoryRepository = ingredientCategoryRepository;
+        this.categoryRepository = categoryRepository;
+        this.recipeItemRepository = recipeItemRepository;
     }
 
     @Override
@@ -41,7 +45,7 @@ public class IngredientService implements IIngredientService {
             throw new RuntimeException(String.format(AppConstants.INGREDIENT_ALREADY_EXISTS, request.getName()));
         }
 
-        IngredientCategory existingIngredientCategory = ingredientCategoryRepository.findByName(request.getIngredientCategoryName())
+        Category existingIngredientCategory = categoryRepository.findByName(request.getIngredientCategoryName())
                 .orElseThrow(() -> new RuntimeException("Ingredient category not found: " + request.getIngredientCategoryName()));
 
         UnitOfMeasure existingUnitOfMeasure = unitOfMeasureRepository.findByBaseUnitCode(request.getBaseUnitCode())
@@ -83,8 +87,9 @@ public class IngredientService implements IIngredientService {
             throw new RuntimeException(String.format(AppConstants.INGREDIENT_ALREADY_EXISTS, request.getName()));
         }
 
-        IngredientCategory existingIngredientCategory = ingredientCategoryRepository.findByName(request.getIngredientCategoryName())
+        Category existingIngredientCategory = categoryRepository.findByName(request.getIngredientCategoryName())
                 .orElseThrow(() -> new RuntimeException("Ingredient category not found: " + request.getIngredientCategoryName()));
+
 
         UnitOfMeasure existingUnitOfMeasure = unitOfMeasureRepository.findByBaseUnitCode(request.getBaseUnitCode())
                 .stream().findFirst().orElseThrow(() -> new RuntimeException(
@@ -105,6 +110,7 @@ public class IngredientService implements IIngredientService {
     public void deleteIngredient(Long id) {
         Ingredient existingIngredient = ingredientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(String.format(AppConstants.INGREDIENT_NOT_FOUND_WITH_ID, id)));
+        recipeItemRepository.deleteAllByIngredientId(existingIngredient.getId());
         ingredientRepository.delete(existingIngredient);
     }
 }

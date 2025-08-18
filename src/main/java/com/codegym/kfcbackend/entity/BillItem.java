@@ -49,7 +49,4 @@ public class BillItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "combo_id")
     private Combo combo;
-
-    @OneToMany(mappedBy = "billItem", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BillItemDetail> billItemDetails;
 }

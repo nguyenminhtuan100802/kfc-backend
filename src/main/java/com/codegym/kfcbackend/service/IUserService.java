@@ -9,7 +9,5 @@ import java.util.List;
 
 public interface IUserService {
     User createUser(EmployeeRequest request);
-    User login(LoginRequest request);
     List<User> getAllUsers();
-    User changeDefaultPassword(ChangeDefaultPasswordRequest request);
 }

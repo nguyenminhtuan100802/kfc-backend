@@ -26,11 +26,4 @@ public class Permission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
-
-    @OneToMany(
-            mappedBy = "permission",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    private List<RolePermission> rolePermissions;
 }

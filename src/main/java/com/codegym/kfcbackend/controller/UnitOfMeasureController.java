@@ -2,11 +2,12 @@ package com.codegym.kfcbackend.controller;
 
 import com.codegym.kfcbackend.dto.request.UnitOfMeasureRequest;
 import com.codegym.kfcbackend.dto.response.ApiResponse;
+import com.codegym.kfcbackend.dto.response.PageCacheResponse;
 import com.codegym.kfcbackend.dto.response.UnitOfMeasureResponse;
 import com.codegym.kfcbackend.entity.UnitOfMeasure;
 import com.codegym.kfcbackend.service.IUnitOfMeasureService;
-import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,10 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("unit-of-measures")
 public class UnitOfMeasureController {
@@ -33,18 +33,14 @@ public class UnitOfMeasureController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUnitOfMeasure(@RequestBody UnitOfMeasureRequest request) {
-        try {
-            UnitOfMeasure unitOfMeasure = unitOfMeasureService.createUnitOfMeasure(request);
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .data(unitOfMeasure)
-                    .message("Created unit of measure successfully")
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .message(e.getMessage())
-                    .build());
-        }
+    public ResponseEntity<?> createUnitOfMeasure(@Valid @RequestBody UnitOfMeasureRequest request) {
+        log.info("POST /unit-of-measures called");
+        UnitOfMeasure unitOfMeasure = unitOfMeasureService.createUnitOfMeasure(request);
+        log.info("Created unit id={}", unitOfMeasure.getId());
+        return ResponseEntity.ok(ApiResponse.builder()
+                .data(unitOfMeasure)
+                .message("Created unit of measure successfully")
+                .build());
     }
 
     @GetMapping
@@ -53,12 +49,12 @@ public class UnitOfMeasureController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "3") int size
     ) {
-        Page<UnitOfMeasure> result = unitOfMeasureService.getUnitsByKeyword(keyword, page, size);
+        log.info("GET /unit-of-measures called - keyword={}, page={}, size={}", keyword, page, size);
+        PageCacheResponse<UnitOfMeasure> result = unitOfMeasureService.getUnitsByKeyword(keyword, page, size);
 
-        List<UnitOfMeasure> unitOfMeasures = result.getContent();
         List<UnitOfMeasureResponse> unitOfMeasureResponses = new ArrayList<>();
-        for (UnitOfMeasure unitOfMeasure : unitOfMeasures) {
-            UnitOfMeasureResponse unitOfMeasureResponse = UnitOfMeasureResponse.builder()
+        for (UnitOfMeasure unitOfMeasure : result.getContent()) {
+            unitOfMeasureResponses.add(UnitOfMeasureResponse.builder()
                     .id(unitOfMeasure.getId())
                     .code(unitOfMeasure.getCode())
                     .baseUnitCode(unitOfMeasure.getBaseUnitCode())
@@ -67,19 +63,21 @@ public class UnitOfMeasureController {
                     .createdBy(unitOfMeasure.getCreatedBy())
                     .modifiedAt(unitOfMeasure.getModifiedAt())
                     .modifiedBy(unitOfMeasure.getModifiedBy())
-                    .build();
-            unitOfMeasureResponses.add(unitOfMeasureResponse);
+                    .build());
         }
+        log.info("Returning {} items (totalElements={})", unitOfMeasureResponses.size(), result.getTotalElements());
         return ResponseEntity.ok(ApiResponse.builder()
                 .data(unitOfMeasureResponses)
                 .totalElements(result.getTotalElements())
-                .totalPages((long) result.getTotalPages())
+                .totalPages(result.getTotalPages())
                 .build());
     }
 
     @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllUnits() {
+        log.info("GET /unit-of-measures/all called");
         List<UnitOfMeasure> list = unitOfMeasureService.getAllUnits();
+        log.info("Returned all units: count={}", list.size());
         return ResponseEntity.ok(ApiResponse.builder().data(list).build());
     }
 
@@ -87,30 +85,23 @@ public class UnitOfMeasureController {
     public ResponseEntity<ApiResponse> updateUnit(
             @PathVariable Long id,
             @RequestBody UnitOfMeasureRequest request) {
-        try {
-            UnitOfMeasure updated = unitOfMeasureService.editUnitOfMeasure(id, request);
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .data(updated)
-                    .message("Updated unit of measure successfully")
-                    .build());
-        } catch (RuntimeException ex) {
-            return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .message(ex.getMessage())
-                    .build());
-        }
+        log.info("PUT /unit-of-measures/{} called", id);
+        UnitOfMeasure updated = unitOfMeasureService.editUnitOfMeasure(id, request);
+        log.info("Updated unit id={}", id);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .data(updated)
+                .message("Updated unit of measure successfully")
+                .build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteUnit(@PathVariable Long id) {
-        try {
-            unitOfMeasureService.deleteUnitOfMeasure(id);
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .message("Deleted unit with id = " + id)
-                    .build());
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.builder()
-                    .message(ex.getMessage())
-                    .build());
-        }
+        log.info("DELETE /unit-of-measures/{} called", id);
+        unitOfMeasureService.deleteUnitOfMeasure(id);
+        log.info("Deleted unit id={}", id);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .message("Deleted unit with id = " + id)
+                .build());
+
     }
 }

@@ -10,6 +10,8 @@ import com.codegym.kfcbackend.dto.response.SummaryReportResponse;
 import com.codegym.kfcbackend.entity.Bill;
 import com.codegym.kfcbackend.entity.BillItem;
 import com.codegym.kfcbackend.entity.BillItemDetail;
+import com.codegym.kfcbackend.service.IBillItemDetailService;
+import com.codegym.kfcbackend.service.IBillItemService;
 import com.codegym.kfcbackend.service.IBillService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,38 +31,47 @@ import java.util.List;
 @RequestMapping("bills")
 public class BillController {
     private final IBillService billService;
+    private final IBillItemService billItemService;
+    private final IBillItemDetailService billItemDetailService;
 
-    public BillController(IBillService billService) {
+    public BillController(IBillService billService,
+                          IBillItemService billItemService,
+                          IBillItemDetailService billItemDetailService) {
         this.billService = billService;
+        this.billItemService = billItemService;
+        this.billItemDetailService = billItemDetailService;
     }
 
     @PostMapping
     public ResponseEntity<?> createBill(@RequestBody BillRequest request) {
         try {
             Bill bill = billService.createBill(request);
-            List<BillItemResponse> billItemResponses = new ArrayList<>();
-            for (BillItem billItem : bill.getBillItems()) {
+
+            BillResponse billResponse = BillResponse.builder()
+                    .billDate(bill.getBillDate())
+                    .totalPrice(bill.getTotalRevenue())
+                    .staffName(bill.getStaff().getUsername())
+                    .billItems(new ArrayList<>())
+                    .build();
+
+            List<BillItem> billItems = billItemService.getAllBillItemsByBillId(bill.getId());
+            for (BillItem billItem : billItems) {
                 if (billItem.getCombo() != null) {
-                    billItemResponses.add(BillItemResponse.builder()
+                    billResponse.getBillItems().add(BillItemResponse.builder()
                             .comboNameOrProductName(billItem.getCombo().getName())
                             .quantity(billItem.getQuantity())
                             .totalPrice(billItem.getTotalPrice())
                             .build());
                 }
                 if (billItem.getProduct() != null) {
-                    billItemResponses.add(BillItemResponse.builder()
+                    billResponse.getBillItems().add(BillItemResponse.builder()
                             .comboNameOrProductName(billItem.getProduct().getName())
                             .quantity(billItem.getQuantity())
                             .totalPrice(billItem.getTotalPrice())
                             .build());
                 }
             }
-            BillResponse billResponse = BillResponse.builder()
-                    .billDate(bill.getBillDate())
-                    .totalPrice(bill.getTotalRevenue())
-                    .staffName(bill.getStaff().getUsername())
-                    .billItems(billItemResponses)
-                    .build();
+
             return ResponseEntity.ok(ApiResponse.builder()
                     .data(billResponse)
                     .message("Bill created successfully")
@@ -75,7 +86,7 @@ public class BillController {
     @GetMapping
     public ResponseEntity<?> getAllBills() {
         try {
-                List<Bill> bills = billService.getAllBills();
+            List<Bill> bills = billService.getAllBills();
             List<BillResponse> billResponses = new ArrayList<>();
             for (Bill bill : bills) {
                 BillResponse billResponse = BillResponse.builder()
@@ -88,7 +99,8 @@ public class BillController {
                         .billItems(new ArrayList<>())
                         .build();
 
-                for (BillItem billItem : bill.getBillItems()) {
+                List<BillItem> billItems = billItemService.getAllBillItemsByBillId(bill.getId());
+                for (BillItem billItem : billItems) {
                     BillItemResponse billItemResponse = BillItemResponse.builder()
                             .quantity(billItem.getQuantity())
                             .totalPrice(billItem.getTotalPrice())
@@ -106,7 +118,8 @@ public class BillController {
                         billItemResponse.setDescription(billItem.getProduct().getDescription());
                     }
 
-                    for (BillItemDetail billItemDetail : billItem.getBillItemDetails()) {
+                    List<BillItemDetail> billItemDetails = billItemDetailService.getAllBillItemDetailsByBillItemId(billItem.getId());
+                    for (BillItemDetail billItemDetail : billItemDetails) {
                         BillItemDetailResponse billItemDetailResponse = BillItemDetailResponse.builder()
                                 .ingredientName(billItemDetail.getIngredientName())
                                 .usedQuantity(billItemDetail.getUsedQuantity())
@@ -137,7 +150,7 @@ public class BillController {
             return ResponseEntity.ok(ApiResponse.builder()
                     .data(response)
                     .build());
-        }catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.builder()
                     .message(e.getMessage())
                     .build());

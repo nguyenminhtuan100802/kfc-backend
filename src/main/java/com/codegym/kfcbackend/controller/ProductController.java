@@ -8,6 +8,7 @@ import com.codegym.kfcbackend.dto.response.RecipeItemResponse;
 import com.codegym.kfcbackend.entity.Product;
 import com.codegym.kfcbackend.entity.RecipeItem;
 import com.codegym.kfcbackend.service.IProductService;
+import com.codegym.kfcbackend.service.IRecipeItemService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,9 +28,12 @@ import java.util.List;
 @RequestMapping("products")
 public class ProductController {
     private final IProductService productService;
+    private final IRecipeItemService recipeItemService;
 
-    public ProductController(IProductService productService) {
+    public ProductController(IProductService productService,
+                             IRecipeItemService recipeItemService) {
         this.productService = productService;
+        this.recipeItemService = recipeItemService;
     }
 
     @PostMapping
@@ -39,7 +43,7 @@ public class ProductController {
             ProductResponse response = ProductResponse.builder()
                     .name(product.getName())
                     .price(product.getPrice())
-                    .categoryName(product.getProductCategory().getName())
+//                    .categoryName(product.getProductCategory().getName())
                     .build();
             return ResponseEntity.ok(ApiResponse.builder()
                     .data(response)
@@ -59,7 +63,7 @@ public class ProductController {
             ProductResponse response = ProductResponse.builder()
                     .name(product.getName())
                     .price(product.getPrice())
-                    .categoryName(product.getProductCategory().getName())
+//                    .categoryName(product.getProductCategory().getName())
                     .build();
             return ResponseEntity.ok(ApiResponse.builder()
                     .message("Update product successfully")
@@ -89,25 +93,28 @@ public class ProductController {
     public ResponseEntity<?> getAllProducts() {
         try {
             List<Product> products = productService.getAllProducts();
+
             List<ProductResponse> productResponses = new ArrayList<>();
             for (Product product : products) {
-                List<RecipeItemResponse> recipeItemResponses = new ArrayList<>();
-                for (RecipeItem recipeItem : product.getRecipeItems()) {
-                    recipeItemResponses.add(RecipeItemResponse.builder()
-                            .ingredientName(recipeItem.getIngredient().getName())
-                            .quantity(recipeItem.getQuantity())
-                            .baseUnitCode(recipeItem.getIngredient().getBaseUnitCode())
-                            .build());
-                }
-                productResponses.add(ProductResponse.builder()
+                ProductResponse productResponse = ProductResponse.builder()
                         .id(product.getId())
                         .name(product.getName())
                         .price(product.getPrice())
                         .description(product.getDescription())
                         .imageUrl(product.getImageUrl())
                         .categoryName(product.getProductCategory().getName())
-                        .recipeItems(recipeItemResponses)
-                        .build());
+                        .recipeItems(new ArrayList<>())
+                        .build();
+
+                List<RecipeItem> recipeItems = recipeItemService.getAllRecipeItemsByProductId(product.getId());
+                for (RecipeItem recipeItem : recipeItems) {
+                    productResponse.getRecipeItems().add(RecipeItemResponse.builder()
+                            .ingredientName(recipeItem.getIngredient().getName())
+                            .quantity(recipeItem.getQuantity())
+                            .baseUnitCode(recipeItem.getIngredient().getBaseUnitCode())
+                            .build());
+                }
+                productResponses.add(productResponse);
             }
             return ResponseEntity.ok(ApiResponse.builder()
                     .data(productResponses)
@@ -124,30 +131,33 @@ public class ProductController {
             @RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "3") int size,
-            @RequestParam(value = "productCategoryId",  required = false) Long productCategoryId
+            @RequestParam(value = "productCategoryId", required = false) Long productCategoryId
     ) {
         try {
             Page<Product> result = productService.getProductByKeyword(keyword, page, size, productCategoryId);
+
             List<Product> products = result.getContent();
             List<ProductResponse> productResponses = new ArrayList<>();
             for (Product product : products) {
-                List<RecipeItemResponse> recipeItemResponses = new ArrayList<>();
-                for (RecipeItem recipeItem : product.getRecipeItems()) {
-                    recipeItemResponses.add(RecipeItemResponse.builder()
-                            .ingredientName(recipeItem.getIngredient().getName())
-                            .quantity(recipeItem.getQuantity())
-                            .baseUnitCode(recipeItem.getIngredient().getBaseUnitCode())
-                            .build());
-                }
-                productResponses.add(ProductResponse.builder()
+                ProductResponse productResponse = ProductResponse.builder()
                         .id(product.getId())
                         .name(product.getName())
                         .price(product.getPrice())
                         .description(product.getDescription())
                         .imageUrl(product.getImageUrl())
                         .categoryName(product.getProductCategory().getName())
-                        .recipeItems(recipeItemResponses)
-                        .build());
+                        .recipeItems(new ArrayList<>())
+                        .build();
+
+                List<RecipeItem> recipeItems = recipeItemService.getAllRecipeItemsByProductId(product.getId());
+                for (RecipeItem recipeItem : recipeItems) {
+                    productResponse.getRecipeItems().add(RecipeItemResponse.builder()
+                            .ingredientName(recipeItem.getIngredient().getName())
+                            .quantity(recipeItem.getQuantity())
+                            .baseUnitCode(recipeItem.getIngredient().getBaseUnitCode())
+                            .build());
+                }
+                productResponses.add(productResponse);
             }
             return ResponseEntity.ok(ApiResponse.builder()
                     .data(productResponses)

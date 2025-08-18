@@ -1,5 +1,6 @@
 package com.codegym.kfcbackend.dto.response;
 
+import com.codegym.kfcbackend.entity.UnitOfMeasure;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,8 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ComboCategoryResponse {
-    private Long id;
-    private String name;
-    private List<ComboResponse> combos;
+public class PageCacheResponse<T> {
+    private List<T> content;
+    private long totalElements;
+    private long totalPages;
 }

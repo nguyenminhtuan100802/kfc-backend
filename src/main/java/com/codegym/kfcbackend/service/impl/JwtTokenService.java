@@ -2,6 +2,7 @@ package com.codegym.kfcbackend.service.impl;
 
 import com.codegym.kfcbackend.constant.AppConstants;
 import com.codegym.kfcbackend.entity.User;
+import com.codegym.kfcbackend.service.IJwtTokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -22,7 +23,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
-public class JwtTokenService {
+public class JwtTokenService implements IJwtTokenService {
     @Value("${jwt.expiration}")
     private int expiration;
     @Value("${jwt.expiration-refresh-token}")
@@ -30,6 +31,7 @@ public class JwtTokenService {
     @Value("${jwt.secretKey}")
     private String secretKey;
 
+    @Override
     public String generateToken(User user) throws Exception {
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", user.getUsername());
@@ -45,6 +47,44 @@ public class JwtTokenService {
         } catch (Exception e) {
             throw new RuntimeException(String.format(AppConstants.MESSAGE_TOKEN_ERROR, e.getMessage()));
         }
+    }
+
+    //check expiration
+    @Override
+    public boolean isTokenExpired(String token) {
+        Date expirationDate = extractClaim(token, Claims::getExpiration);
+        return expirationDate.before(new Date());
+    }
+
+    @Override
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    @Override
+    public boolean validateToken(String token, User userDetails) {
+        try {
+            String username = extractUsername(token);
+//            Token existingToken = tokenRepository.findByToken(token);
+//            if (existingToken == null ||
+//                    existingToken.isRevoked() ||
+//                    !userDetails.isActive()
+//            ) {
+//                return false;
+//            }
+            return (username.equals(userDetails.getUsername()))
+                    && !isTokenExpired(token);
+        } catch (MalformedJwtException e) {
+//            logger.error("Invalid JWT token: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+//            logger.error("JWT token is expired: {}", e.getMessage());
+        } catch (UnsupportedJwtException e) {
+//            logger.error("JWT token is unsupported: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+//            logger.error("JWT claims string is empty: {}", e.getMessage());
+        }
+
+        return false;
     }
 
     private Key getSignInKey() {
@@ -69,43 +109,8 @@ public class JwtTokenService {
                 .getBody();
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    private  <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
-    }
-
-    //check expiration
-    public boolean isTokenExpired(String token) {
-        Date expirationDate = extractClaim(token, Claims::getExpiration);
-        return expirationDate.before(new Date());
-    }
-
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    public boolean validateToken(String token, User userDetails) {
-        try {
-            String username = extractUsername(token);
-//            Token existingToken = tokenRepository.findByToken(token);
-//            if (existingToken == null ||
-//                    existingToken.isRevoked() ||
-//                    !userDetails.isActive()
-//            ) {
-//                return false;
-//            }
-            return (username.equals(userDetails.getUsername()))
-                    && !isTokenExpired(token);
-        } catch (MalformedJwtException e) {
-//            logger.error("Invalid JWT token: {}", e.getMessage());
-        } catch (ExpiredJwtException e) {
-//            logger.error("JWT token is expired: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-//            logger.error("JWT token is unsupported: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-//            logger.error("JWT claims string is empty: {}", e.getMessage());
-        }
-
-        return false;
     }
 }

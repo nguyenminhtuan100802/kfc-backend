@@ -13,8 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ProductCategoryResponse {
+public class CategoryTypeResponse {
     private Long id;
     private String name;
-    List<ProductResponse> products;
+    private List<CategoryResponse> categories;
 }

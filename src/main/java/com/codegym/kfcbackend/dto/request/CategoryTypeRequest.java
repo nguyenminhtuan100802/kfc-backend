@@ -1,4 +1,4 @@
-package com.codegym.kfcbackend.dto.response;
+package com.codegym.kfcbackend.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,15 +6,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class IngredientCategoryResponse {
-    private Long id;
+public class CategoryTypeRequest {
     private String name;
-    private List<IngredientResponse> ingredients;
 }

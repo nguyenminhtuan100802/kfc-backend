@@ -7,6 +7,7 @@ import com.codegym.kfcbackend.dto.response.ComboItemResponse;
 import com.codegym.kfcbackend.dto.response.ComboResponse;
 import com.codegym.kfcbackend.entity.Combo;
 import com.codegym.kfcbackend.entity.ComboItem;
+import com.codegym.kfcbackend.service.IComboItemService;
 import com.codegym.kfcbackend.service.IComboService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,9 +26,12 @@ import java.util.List;
 @RequestMapping("combos")
 public class ComboController {
     private final IComboService comboService;
+    private final IComboItemService comboItemService;
 
-    public ComboController(IComboService comboService) {
+    public ComboController(IComboService comboService,
+                           IComboItemService comboItemService) {
         this.comboService = comboService;
+        this.comboItemService = comboItemService;
     }
 
     @PostMapping
@@ -48,16 +52,10 @@ public class ComboController {
     public ResponseEntity<?> getAllCombos() {
         try {
             List<Combo> combos = comboService.getAllCombos();
+
             List<ComboResponse> responses = new ArrayList<>();
             for (Combo combo : combos) {
-                List<ComboItemResponse> comboItemResponses = new ArrayList<>();
-                for (ComboItem comboItem : combo.getComboItems()) {
-                    comboItemResponses.add(ComboItemResponse.builder()
-                            .productName(comboItem.getProduct().getName())
-                            .quantity(comboItem.getQuantity())
-                            .build());
-                }
-                responses.add(ComboResponse.builder()
+                ComboResponse comboResponse = ComboResponse.builder()
                         .id(combo.getId())
                         .name(combo.getName())
                         .description(combo.getDescription())
@@ -70,8 +68,17 @@ public class ComboController {
                         .discountStartTime(combo.getDiscountStartTime())
                         .discountEndTime(combo.getDiscountEndTime())
                         .categoryName(combo.getComboCategory().getName())
-                        .comboItems(comboItemResponses)
-                        .build());
+                        .comboItems(new ArrayList<>())
+                        .build();
+
+                List<ComboItem> comboItems = comboItemService.getAllComboItemsByComboId(combo.getId());
+                for (ComboItem comboItem : comboItems) {
+                    comboResponse.getComboItems().add(ComboItemResponse.builder()
+                            .productName(comboItem.getProduct().getName())
+                            .quantity(comboItem.getQuantity())
+                            .build());
+                }
+                responses.add(comboResponse);
             }
             return ResponseEntity.ok(ApiResponse.builder()
                     .data(responses)

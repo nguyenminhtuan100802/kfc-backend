@@ -36,7 +36,7 @@ public class Ingredient {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal currentQuantity;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne
     @JoinColumn(name = "ingredient_category_id")
-    private IngredientCategory ingredientCategory;
+    private Category ingredientCategory;
 }
